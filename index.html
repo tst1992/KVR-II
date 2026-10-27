@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KVR II</title>
+<meta name="description" content="Trainer für die Kollisionsverhütungsregeln (KVR) zur Vorbereitung auf den Sportseeschifferschein.">
+<meta name="theme-color" content="#0A121C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KVR II">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+/* ==========================================================================
+   KVR II
+   Gestaltung übernommen aus dem SSS-Trainer Seemannschaft.
+   Farbwelt: Positionslichter bei Nacht. Backbordrot, Steuerbordgrün,
+   Topplichtweiss auf Nachtsee. Zahlen laufen im Monospace.
+   ========================================================================== */
+
+
+:root{
+  --sea-900:#0A121C;
+  --sea-850:#0E1927;
+  --sea-800:#132335;
+  --sea-700:#1B3149;
+  --line:#25405C;
+  --line-soft:#1A2C40;
+
+  --fog:#C6D3E0;
+  --fog-dim:#7E93A9;
+  --white-light:#F1F6FB;
+
+  --stbd:#3CC28C;         /* Steuerbord: richtig */
+  --stbd-dim:#16382C;
+  --port:#E8555E;         /* Backbord: falsch */
+  --port-dim:#3D1A20;
+  --brass:#D8A544;        /* teilweise, Hinweise */
+  --brass-dim:#3A2E14;
+
+  --r:14px;
+  --tap:44px;
+
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+}
+
+*{box-sizing:border-box}
+/* Muss vor allen display-Regeln stehen, sonst fangen ausgeblendete Overlays Klicks ab. */
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  background:var(--sea-900);
+  color:var(--fog);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom);
+  overflow-wrap:break-word;
+}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.skiplink{position:absolute;left:-9999px;top:0;background:var(--brass);color:#1A1204;padding:10px 14px;z-index:60;border-radius:0 0 8px 0}
+.skiplink:focus{left:0}
+
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:6px}
+
+/* ---------- Kopfzeile ---------- */
+.top{position:sticky;top:0;z-index:30;background:var(--sea-900);padding-top:env(safe-area-inset-top)}
+.top-row{display:flex;align-items:center;gap:6px;padding:8px 10px;max-width:660px;margin:0 auto}
+.brand{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding-left:4px}
+.brand-name{font-size:.82rem;font-weight:650;letter-spacing:.10em;text-transform:uppercase;color:var(--white-light)}
+.crumb{font-size:.72rem;color:var(--fog-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Signatur: die drei Positionslichter als Horizontlinie */
+.horizon{display:flex;height:2px}
+.horizon i{flex:1}
+.horizon .port{background:linear-gradient(90deg,var(--port),rgba(232,85,94,.15))}
+.horizon .mast{background:rgba(241,246,251,.30);flex:.5}
+.horizon .stbd{background:linear-gradient(90deg,rgba(60,194,140,.15),var(--stbd))}
+
+.icon-btn{
+  min-width:var(--tap);min-height:var(--tap);
+  display:grid;place-items:center;
+  background:none;border:0;color:var(--fog-dim);cursor:pointer;border-radius:10px;padding:0;
+}
+.icon-btn:hover{color:var(--white-light);background:var(--sea-800)}
+.icon-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Layout ---------- */
+main{max-width:640px;margin:0 auto;padding:20px 16px 96px}
+.screen{animation:rise .28s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.h-display{
+  font-size:clamp(2rem,9vw,2.9rem);line-height:1.03;margin:8px 0 12px;
+  color:var(--white-light);font-weight:680;letter-spacing:-.025em;
+}
+.h-section{font-size:1.18rem;margin:0;color:var(--white-light);font-weight:640;letter-spacing:-.01em}
+.lede{color:var(--fog-dim);margin:0 0 26px;font-size:.95rem}
+.eyebrow{
+  font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--fog-dim);margin:0 0 10px;font-weight:640;
+}
+
+/* ---------- Auswahlkacheln ---------- */
+.choices{display:grid;gap:8px;margin-bottom:28px}
+.choices.row4{grid-template-columns:repeat(4,1fr)}
+.choice{
+  display:flex;flex-direction:column;gap:3px;text-align:left;
+  min-height:var(--tap);padding:13px 15px;
+  background:var(--sea-850);border:1px solid var(--line-soft);border-radius:var(--r);
+  color:var(--fog);cursor:pointer;font:inherit;transition:border-color .15s,background .15s;
+}
+.choices.row4 .choice{align-items:center;text-align:center;padding:14px 4px}
+.choice:hover{border-color:var(--line)}
+.choice[aria-checked="true"]{border-color:var(--stbd);background:var(--sea-800)}
+.choice-title{color:var(--white-light);font-weight:620;font-size:.98rem}
+.choices.row4 .choice-title{font-family:var(--mono);font-size:1.35rem;font-weight:600;line-height:1.1}
+.choice-sub{font-size:.8rem;color:var(--fog-dim);line-height:1.35}
+
+/* ---------- Knöpfe ---------- */
+.cta{
+  display:block;width:100%;min-height:52px;margin-top:8px;
+  background:var(--stbd);color:#04150E;border:0;border-radius:var(--r);
+  font:inherit;font-weight:680;font-size:1rem;cursor:pointer;transition:filter .15s,opacity .15s;
+}
+.cta:hover{filter:brightness(1.08)}
+.cta:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.ghost{
+  display:block;width:100%;min-height:var(--tap);margin-top:8px;
+  background:none;color:var(--fog-dim);border:1px solid var(--line-soft);border-radius:var(--r);
+  font:inherit;font-size:.92rem;cursor:pointer;
+}
+.ghost:hover{color:var(--white-light);border-color:var(--line)}
+.ghost:disabled{opacity:.45;cursor:not-allowed}
+.ghost:disabled:hover{color:var(--fog-dim);border-color:var(--line-soft)}
+.ghost.danger:hover{color:var(--port);border-color:var(--port)}
+.ghost.brass{color:var(--brass);border-color:rgba(216,165,68,.45)}
+.ghost.brass:hover{border-color:var(--brass);color:var(--brass)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.textlink{background:none;border:0;padding:6px 0;margin-top:14px;color:var(--fog-dim);font:inherit;font-size:.85rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+.textlink:hover{color:var(--white-light)}
+
+/* ---------- Fortschrittsbalken der Runde ---------- */
+.meter{height:3px;background:var(--line-soft);border-radius:2px;overflow:hidden;margin-bottom:22px}
+.meter i{display:block;height:100%;background:var(--stbd);width:0;transition:width .3s ease}
+
+/* ---------- Fragekopf ---------- */
+.plate-label{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--fog-dim);margin:0 0 8px;font-family:var(--mono)}
+.plate-label .wdh{color:var(--brass)}
+.q-name{font-size:clamp(1.3rem,5.2vw,1.65rem);line-height:1.25;color:var(--white-light);font-weight:640;margin:0;letter-spacing:-.015em}
+
+.answer-area{margin-top:22px}
+textarea#antwort{
+  width:100%;min-height:140px;padding:12px 14px;
+  background:var(--sea-900);border:1px solid var(--line);border-radius:10px;
+  color:var(--white-light);font:inherit;font-size:1rem;line-height:1.55;
+  resize:vertical;display:block;
+}
+textarea#antwort::placeholder{color:#5B6E82}
+textarea#antwort:focus{border-color:var(--stbd);outline:none}
+textarea#antwort[readonly]{border-color:var(--line-soft);color:var(--fog);cursor:default;min-height:0;resize:none;overflow:hidden}
+.kbd-hint{margin:6px 0 0;font-size:.74rem;color:#5B6E82;text-align:right}
+
+.hint-note{
+  display:flex;gap:10px;align-items:flex-start;
+  margin:10px 0 0;padding:10px 12px;border-radius:10px;
+  background:linear-gradient(var(--brass-dim),var(--sea-850));border:1px solid rgba(216,165,68,.4);
+  font-size:.9rem;color:var(--fog);
+}
+.hint-note b{color:var(--brass);font-weight:640;flex:none}
+
+/* ---------- Rückmeldung ---------- */
+.verdict{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-top:18px;padding:14px 12px 14px 14px;
+  border:1px solid var(--line-soft);border-radius:var(--r);background:var(--sea-850);
+}
+.verdict.ok{border-color:var(--stbd);background:linear-gradient(var(--stbd-dim),var(--sea-850))}
+.verdict.no{border-color:var(--port);background:linear-gradient(var(--port-dim),var(--sea-850))}
+.verdict.skip{border-color:var(--brass);background:linear-gradient(var(--brass-dim),var(--sea-850))}
+/* Die Lampe ist Sektorlicht, nicht blosser Punkt */
+.lamp{width:14px;height:14px;border-radius:50%;flex:none;margin-top:4px;background:var(--fog-dim)}
+.verdict.ok .lamp{background:var(--stbd);box-shadow:0 0 0 4px rgba(60,194,140,.16)}
+.verdict.no .lamp{background:var(--port);box-shadow:0 0 0 4px rgba(232,85,94,.16)}
+.verdict.skip .lamp{background:var(--brass);box-shadow:0 0 0 4px rgba(216,165,68,.16)}
+.verdict-text{flex:1;min-width:0}
+.verdict-head{margin:0;font-weight:660;color:var(--white-light);font-size:1rem}
+.verdict-head:focus{outline:none}
+.verdict-sub{margin:3px 0 0;font-size:.88rem;color:var(--fog-dim)}
+.verdict-sub b{color:var(--fog);font-weight:620}
+
+.sub-eyebrow{margin-top:22px}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.chip{
+  font-size:.83rem;padding:5px 10px;border-radius:999px;
+  background:var(--sea-800);border:1px solid var(--line-soft);color:var(--fog);
+}
+.chip.hit{border-color:var(--stbd);color:var(--stbd);background:rgba(60,194,140,.08)}
+.chip.fehlt{opacity:.55}
+.chip i{font-style:normal;margin-right:5px}
+.chip .pf{font-family:var(--mono);color:var(--brass);margin-left:4px;font-size:.75rem}
+.chip.hit .pf{color:var(--stbd)}
+
+/* ---------- Musterlösung ---------- */
+.loesung{
+  background:var(--sea-850);border:1px solid var(--line-soft);border-left:3px solid var(--stbd);
+  border-radius:0 var(--r) var(--r) 0;padding:14px 16px;
+}
+.loesung p{margin:0;font-size:.95rem;color:var(--fog);line-height:1.6}
+.loesung ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.loesung li{font-size:.95rem;color:var(--fog);line-height:1.5}
+.loesung li::marker{color:var(--brass)}
+.anmerkung{margin:10px 0 0;font-size:.85rem;color:var(--brass);line-height:1.45}
+.anmerkung b{font-weight:640}
+
+/* ---------- Ergebnis ---------- */
+.score{font-size:clamp(2.8rem,14vw,3.8rem);line-height:1;color:var(--white-light);margin:10px 0 8px;font-weight:600}
+.tally{display:flex;align-items:baseline;gap:9px;margin:4px 0 6px;flex-wrap:wrap}
+.tally-num{font-family:var(--mono);font-size:1.5rem;color:var(--white-light);font-weight:600;line-height:1}
+.tally-pct{font-size:.9rem;color:var(--fog-dim)}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+.fact{font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line-soft);color:var(--fog-dim);background:var(--sea-850)}
+.fact b{font-family:var(--mono);color:var(--white-light);font-weight:600;margin-right:4px}
+
+.misslist{margin:6px 0 24px;display:grid;gap:6px}
+.miss{
+  display:flex;gap:12px;align-items:baseline;padding:11px 13px;width:100%;text-align:left;
+  background:var(--sea-850);border:0;border-left:3px solid var(--port);border-radius:0 10px 10px 0;
+  color:var(--fog);font:inherit;cursor:pointer;
+}
+.miss:hover{background:var(--sea-800)}
+.miss.later{border-left-color:var(--brass)}
+.miss b{font-family:var(--mono);color:var(--white-light);flex:none;font-weight:600;min-width:2ch;text-align:right}
+.miss span{font-size:.9rem;color:var(--fog);line-height:1.35;flex:1;min-width:0}
+.miss small{display:block;font-size:.74rem;color:var(--fog-dim);margin-top:2px}
+.miss.later small{color:var(--brass)}
+
+/* ---------- Fragenliste ---------- */
+input#suche{
+  width:100%;min-height:var(--tap);padding:12px 14px;
+  background:var(--sea-900);border:1px solid var(--line);border-radius:10px;
+  color:var(--white-light);font:inherit;font-size:1rem;
+}
+input#suche::placeholder{color:#5B6E82}
+input#suche:focus{border-color:var(--stbd);outline:none}
+.such-zahl{margin:12px 0 14px;font-size:.8rem;color:var(--fog-dim);font-family:var(--mono)}
+.such-zeile{
+  display:flex;gap:12px;align-items:baseline;text-align:left;width:100%;
+  margin-bottom:8px;padding:13px 15px;
+  background:var(--sea-850);border:1px solid var(--line-soft);border-radius:var(--r);
+  color:var(--fog);cursor:pointer;font:inherit;transition:border-color .15s;
+}
+.such-zeile:hover{border-color:var(--line)}
+.such-zeile b{font-family:var(--mono);color:var(--fog-dim);font-weight:600;flex:none;min-width:2ch;text-align:right;font-size:.85rem}
+.such-zeile span{color:var(--white-light);font-size:.94rem;line-height:1.35}
+
+/* ---------- Panels ---------- */
+.sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet-scrim{position:absolute;inset:0;background:rgba(4,9,15,.7);animation:fade .2s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{
+  position:relative;width:100%;max-width:640px;max-height:88vh;
+  background:var(--sea-850);border:1px solid var(--line-soft);border-bottom:0;
+  border-radius:20px 20px 0 0;display:flex;flex-direction:column;
+  animation:slide .26s cubic-bezier(.22,.9,.3,1) both;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@keyframes slide{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-grab{height:22px;flex:none;cursor:pointer;display:grid;place-items:center;background:none;border:0;width:100%}
+.sheet-grab::after{content:"";width:38px;height:4px;border-radius:2px;background:var(--line)}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:6px 16px 12px;border-bottom:1px solid var(--line-soft)}
+.sheet-head .plate-label{margin-bottom:4px}
+.sheet-head .h-section{font-size:1.02rem;line-height:1.35}
+.sheet-body{padding:16px;overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+.sheet-body .loesung{background:var(--sea-900)}
+.sheet-body .eyebrow{font-size:.68rem;color:var(--fog-dim);margin:4px 0 10px}
+.sheet-body .eyebrow.sub-eyebrow{margin-top:22px}
+.eigene{margin:0 0 20px;padding:12px 14px;border-radius:10px;border:1px dashed var(--line);background:var(--sea-900);font-size:.92rem;color:var(--fog);white-space:pre-wrap}
+.eigene.leer{color:var(--fog-dim);font-style:italic}
+
+.help-h{color:var(--white-light);font-size:.95rem;margin:22px 0 6px;font-weight:640}
+.help-h:first-child{margin-top:0}
+.sheet-body p{margin:0 0 10px;font-size:.92rem;color:var(--fog-dim)}
+.sheet-body p strong{color:var(--fog)}
+.sheet-body .loesung p{color:var(--fog);margin:0}
+.keyline{border:0;border-top:1px solid var(--line-soft);margin:20px 0}
+.sheet-actions{padding:4px 16px 18px}
+
+/* ---------- Hinweis unten ---------- */
+.toast{
+  position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  z-index:60;background:var(--sea-700);border:1px solid var(--line);color:var(--white-light);
+  padding:11px 17px;border-radius:999px;font-size:.88rem;animation:fade .2s ease both;max-width:92vw;text-align:center;
+}
+
+@media (min-width:520px){
+  .choices.row4 .choice{padding:16px 6px}
+}
+@media (max-width:359px){
+  .choices.row4{grid-template-columns:repeat(2,1fr)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+/* ==========================================================================
+   Ergänzungen KVR II
+   ========================================================================== */
+
+/* ---------- Startseite ---------- */
+.choices.grid2{grid-template-columns:1fr 1fr}
+.choices.grid2 .span2{grid-column:1/-1}
+.choices.row5{grid-template-columns:repeat(5,1fr);gap:6px}
+.choices.row5 .choice{align-items:center;text-align:center;padding:13px 2px}
+.choices.row5 .choice-title{font-family:var(--mono);font-size:1.2rem;font-weight:600;line-height:1.1}
+.choices.row5 .choice-sub{font-size:.72rem}
+.choice-tag{font-family:var(--mono);color:var(--fog-dim);font-weight:500;margin-right:6px}
+.choice[aria-disabled="true"]{opacity:.32;cursor:not-allowed}
+.choice[aria-disabled="true"]:hover{border-color:var(--line-soft)}
+
+/* ---------- Frage ---------- */
+.q-kontext{margin:0 0 12px;font-size:.86rem;color:var(--fog-dim);line-height:1.45}
+.q-kontext b{color:var(--fog);font-weight:620}
+.q-kontext span{display:block}
+.q-name .mono{font-weight:600}
+.q-frage{margin:10px 0 0;color:var(--fog-dim);font-size:.95rem}
+.auftrag{
+  margin:18px 0 0;padding:10px 12px;border-radius:10px;
+  border:1px dashed rgba(216,165,68,.45);color:var(--brass);font-size:.88rem;line-height:1.45;
+}
+
+.feld-label{
+  display:block;margin:16px 0 6px;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--fog-dim);font-weight:640;
+}
+.feld-label .mono{letter-spacing:0;text-transform:none;color:var(--brass);font-size:.8rem;margin-right:4px}
+.feld{
+  width:100%;min-height:var(--tap);padding:11px 13px;display:block;
+  background:var(--sea-900);border:1px solid var(--line);border-radius:10px;
+  color:var(--white-light);font:inherit;font-size:1rem;line-height:1.5;
+}
+textarea.feld{min-height:132px;resize:vertical}
+textarea.feld.kurz{min-height:68px}
+.feld::placeholder{color:#5B6E82}
+.feld:focus{border-color:var(--stbd);outline:none}
+.feld:disabled,.feld[readonly]{border-color:var(--line-soft);color:var(--fog);opacity:1;-webkit-text-fill-color:var(--fog);resize:none}
+.feld.ist-ok{border-color:rgba(60,194,140,.65)!important}
+.feld.ist-no{border-color:rgba(232,85,94,.65)!important}
+select.feld{
+  appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237E93A9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:18px;
+}
+select.feld option{background:var(--sea-850);color:var(--white-light)}
+input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-width:120px}
+#hinweis-text{white-space:pre-line}
+.loes-block .eyebrow.sub-eyebrow{margin-top:16px}
+
+/* ---------- Rückmeldung ---------- */
+.i-btn{
+  flex:none;width:var(--tap);height:var(--tap);margin:-4px -2px -4px 0;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;
+  background:var(--sea-900);border:1px solid var(--line);color:var(--white-light);
+  font:italic 700 1.25rem/1 Georgia,"Times New Roman",serif;
+}
+.i-btn:hover{border-color:var(--fog-dim)}
+.verdict.skip .verdict-head{color:var(--white-light)}
+.chip.no{border-color:rgba(232,85,94,.6);color:#F08A91;background:rgba(232,85,94,.08)}
+
+.loes-zeile{margin:0;font-size:.95rem;color:var(--fog);line-height:1.5}
+.loes-zeile + .loes-zeile{margin-top:6px}
+.loes-zeile b{color:var(--white-light);font-weight:640}
+.loes-zeile .mono{color:var(--brass)}
+.loes-zeile small{display:block;color:var(--fog-dim);font-size:.82rem;margin-top:4px}
+.loes-block{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.loes-block .eyebrow{margin-bottom:6px;font-size:.64rem}
+
+/* Textvergleich Regel 5 / 6 */
+.diff{font-size:.93rem;line-height:1.65;color:var(--fog)}
+.diff .fehlt{color:#F08A91;text-decoration:underline;text-decoration-style:wavy;text-decoration-color:rgba(232,85,94,.7);text-underline-offset:3px}
+.diff .zuviel{color:#F08A91;text-decoration:line-through;text-decoration-color:rgba(232,85,94,.8)}
+.diff-legende{margin:8px 0 0;font-size:.78rem;color:var(--fog-dim)}
+
+/* ---------- Regeltext ---------- */
+.regeltext{display:grid;gap:9px}
+.rt{display:flex;gap:8px;margin:0;font-size:.93rem;line-height:1.55;color:var(--fog)}
+.rt .mk{flex:none;min-width:2.3em;font-family:var(--mono);font-size:.85rem;color:var(--brass);padding-top:.12em}
+.rt.l0{display:block}
+.rt.l2{padding-left:1.7em}
+.rt.l2 .mk{min-width:2.6em}
+.rt.l3{padding-left:3.4em}
+.rt.einzug{padding-left:calc(2.3em + 8px)}
+.sheet-body .rt{color:var(--fog)}
+.rt-kontext{margin:0 0 14px;font-size:.84rem;color:var(--fog-dim);line-height:1.45}
+
+/* ---------- Liste ---------- */
+.teil-kopf{margin:24px 0 10px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--fog-dim);font-weight:640}
+.teil-kopf:first-of-type{margin-top:6px}
+.teil-kopf span{text-transform:none;letter-spacing:0;color:var(--fog);font-size:.82rem;margin-left:6px;font-weight:560}
+.such-zeile small{display:block;font-size:.76rem;color:var(--fog-dim);margin-top:2px}
+.miss span small{color:var(--fog-dim)}
+
+@media (max-width:359px){
+  .choices.row5{grid-template-columns:repeat(3,1fr)}
+  .choices.grid2{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+<body>
+<a class="skiplink" href="#inhalt">Zum Inhalt springen</a>
+
+<header class="top">
+  <div class="top-row">
+    <button class="icon-btn" id="btn-zurueck" type="button" title="Zurück" aria-label="Zurück" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="brand">
+      <span class="brand-name">KVR II</span>
+      <span class="crumb" id="crumb">Kollisionsverhütungsregeln</span>
+    </span>
+    <button class="icon-btn" id="btn-liste" type="button" title="Alle Regeln" aria-label="Alle Regeln">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/></svg>
+    </button>
+    <button class="icon-btn" id="btn-info" type="button" title="Info" aria-label="Info">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>
+    </button>
+  </div>
+  <div class="horizon" aria-hidden="true"><i class="port"></i><i class="mast"></i><i class="stbd"></i></div>
+</header>
+
+<main id="inhalt">
+
+  <!-- ---------- Start ---------- -->
+  <section class="screen" id="screen-start">
+    <p class="eyebrow">Sportseeschifferschein · KVR</p>
+    <h1 class="h-display">Regeln trainieren</h1>
+    <p class="lede">Namen, Teile und Nummern der Kollisionsverhütungsregeln üben. Falsche Antworten kommen in derselben Runde nochmals.</p>
+
+    <p class="eyebrow" id="art-label">Übungsart</p>
+    <div class="choices" id="art-choices" role="radiogroup" aria-labelledby="art-label"></div>
+
+    <p class="eyebrow" id="bereich-label">Bereich</p>
+    <div class="choices grid2" id="bereich-choices" role="radiogroup" aria-labelledby="bereich-label"></div>
+
+    <p class="eyebrow" id="anzahl-label">Anzahl Fragen</p>
+    <div class="choices row5" id="anzahl-choices" role="radiogroup" aria-labelledby="anzahl-label"></div>
+
+    <button class="cta" id="btn-start" type="button">Runde starten</button>
+    <button class="ghost" id="btn-liste-2" type="button">Alle Regeln ansehen</button>
+    <button class="textlink" id="btn-info-2" type="button">So wird bewertet</button>
+  </section>
+
+  <!-- ---------- Frage ---------- -->
+  <section class="screen" id="screen-frage" hidden>
+    <div class="meter" role="progressbar" aria-label="Fortschritt der Runde" aria-valuemin="0" aria-valuemax="100" id="meter"><i id="meter-fill"></i></div>
+    <p class="plate-label" id="frage-label">Frage</p>
+    <div id="frage-kopf"></div>
+
+    <div class="answer-area">
+      <form id="antwort-form" autocomplete="off" novalidate>
+        <div id="antwort-felder"></div>
+        <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
+      </form>
+      <p class="kbd-hint" id="kbd-hint">Strg + Enter prüft</p>
+      <p class="hint-note" id="hinweis-note" hidden><b>Hinweis</b><span id="hinweis-text"></span></p>
+
+      <div id="frage-aktionen">
+        <button class="cta" id="btn-pruefen" type="button" disabled>Prüfen</button>
+        <div class="btn-row">
+          <button class="ghost" id="btn-hinweis" type="button">Hinweis</button>
+          <button class="ghost" id="btn-loesen" type="button">Lösen</button>
+        </div>
+        <button class="ghost" id="btn-ueberspringen" type="button">Überspringen</button>
+      </div>
+    </div>
+
+    <!-- Auswertung -->
+    <div id="auswertung" hidden>
+      <div class="verdict" id="verdict" aria-live="polite">
+        <span class="lamp" aria-hidden="true"></span>
+        <span class="verdict-text">
+          <p class="verdict-head" id="verdict-head" tabindex="-1"></p>
+          <p class="verdict-sub" id="verdict-sub"></p>
+        </span>
+        <button class="i-btn" id="btn-i" type="button" title="Regel anzeigen" aria-label="Regel mit allen Unterpunkten anzeigen">i</button>
+      </div>
+      <button class="ghost brass" id="btn-doch" type="button" hidden>Doch richtig</button>
+
+      <div id="pruefpunkte-wrap">
+        <p class="eyebrow sub-eyebrow">Prüfpunkte</p>
+        <div class="chips" id="pruef-chips"></div>
+      </div>
+
+      <p class="eyebrow sub-eyebrow">Lösung</p>
+      <div class="loesung" id="loesung-box"></div>
+
+      <button class="cta" id="btn-weiter" type="button" style="margin-top:22px">Weiter</button>
+    </div>
+  </section>
+
+  <!-- ---------- Ergebnis ---------- -->
+  <section class="screen" id="screen-ergebnis" hidden>
+    <p class="eyebrow" id="ergebnis-eyebrow">Runde beendet</p>
+    <h2 class="h-section">Ergebnis</h2>
+    <p class="score mono" id="ergebnis-score">0 %</p>
+    <div class="tally">
+      <span class="tally-num" id="ergebnis-zahl">0/0</span>
+      <span class="tally-pct">beim ersten Versuch richtig</span>
+    </div>
+    <div class="facts" id="ergebnis-facts"></div>
+
+    <p class="eyebrow" id="miss-eyebrow" hidden>Noch einmal ansehen</p>
+    <div class="misslist" id="misslist"></div>
+
+    <button class="cta" id="btn-fehler" type="button">Fehler nochmals üben</button>
+    <button class="ghost" id="btn-neu" type="button">Neue Runde</button>
+    <button class="ghost" id="btn-zum-start" type="button">Zur Startseite</button>
+  </section>
+
+  <!-- ---------- Alle Regeln ---------- -->
+  <section class="screen" id="screen-liste" hidden>
+    <p class="eyebrow">Ohne Abfrage</p>
+    <h2 class="h-section">Alle Regeln</h2>
+    <p class="lede">Die 27 Regeln des Fragensets. Sucht in Namen und Regeltext. Antippen zeigt die Regel.</p>
+    <label class="sr-only" for="suche">Suchbegriff</label>
+    <input id="suche" type="search" placeholder="z. B. Ausguck, Luv, Hecklicht" autocomplete="off">
+    <p class="such-zahl" id="such-zahl" aria-live="polite"></p>
+    <div id="such-treffer"></div>
+  </section>
+
+</main>
+
+<!-- ---------- Panel: Regel ---------- -->
+<div class="sheet-wrap" id="sheet-regel" hidden>
+  <div class="sheet-scrim" data-schliessen></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-regel-titel">
+    <button class="sheet-grab" type="button" data-schliessen aria-label="Schliessen"></button>
+    <div class="sheet-head">
+      <div>
+        <p class="plate-label" id="sheet-regel-nr">Regel</p>
+        <h3 class="h-section" id="sheet-regel-titel"></h3>
+      </div>
+      <button class="icon-btn" type="button" data-schliessen aria-label="Schliessen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body" id="sheet-regel-body"></div>
+  </div>
+</div>
+
+<!-- ---------- Panel: Info ---------- -->
+<div class="sheet-wrap" id="sheet-info" hidden>
+  <div class="sheet-scrim" data-schliessen></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-info-titel">
+    <button class="sheet-grab" type="button" data-schliessen aria-label="Schliessen"></button>
+    <div class="sheet-head">
+      <div>
+        <p class="plate-label">Info</p>
+        <h3 class="h-section" id="sheet-info-titel">So funktioniert KVR II</h3>
+      </div>
+      <button class="icon-btn" type="button" data-schliessen aria-label="Schliessen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <p class="help-h">Übungsarten</p>
+      <p><strong>Name eingeben</strong>: Teil und Nummer sind gegeben, Sie schreiben den Namen der Regel. <strong>Teil und Nummer bestimmen</strong>: Der Name ist gegeben, Sie wählen den Teil aus der Liste und tippen die Nummer ein. <strong>Gemischt</strong>: beide Arten zufällig abwechselnd.</p>
+      <p>Abgefragt werden alle Regeln aus Teil A und B sowie die Regeln 23, 24, 25, 26, 27, 30, 35 und 36.</p>
+
+      <p class="help-h">Sonderfälle</p>
+      <p><strong>Regel 5 Ausguck</strong>: zusätzlich den vollständigen Regeltext. <strong>Regel 6 Sichere Geschwindigkeit</strong>: zusätzlich den ersten Absatz („Jedes Fahrzeug … Bedingungen entspricht.“). <strong>Regel 12 Segelfahrzeuge</strong>: zusätzlich Buchstabe a mit den Ziffern i, ii und iii in Stichworten.</p>
+
+      <p class="help-h">Bewertung</p>
+      <p><strong>Namen</strong>: Gross- und Kleinschreibung, Umlaute, ß/ss, Satzzeichen und Leerzeichen spielen keine Rolle, ein bis zwei Tippfehler sind erlaubt.</p>
+      <p><strong>Teil und Nummer</strong> müssen beide stimmen. Beim Namen „Anwendung“ zählt jede Regel dieses Namens (Regel 1, 4, 11, 20 und 40).</p>
+      <p><strong>Regeltext</strong> (Regel 5 und 6): richtig ab 90 % Wortübereinstimmung. Alte und neue Rechtschreibung („muß“/„muss“) gelten gleich. Fehlende Wörter werden markiert.</p>
+      <p><strong>Stichworte</strong> (Regel 12): Je Ziffer müssen die Schlüsselbegriffe vorkommen, zum Beispiel „Wind von Backbord“ und „ausweichen“.</p>
+      <p>Die Automatik erkennt Begriffe, keine Begründungen. Wenn sie sich irrt, werten Sie die Antwort mit „Doch richtig“ selbst.</p>
+
+      <p class="help-h">Hilfen</p>
+      <p><strong>Hinweis</strong> zeigt einen kurzen Tipp. Eine danach richtige Antwort zählt, ist im Ergebnis aber als „mit Hinweis“ vermerkt. <strong>Lösen</strong> zeigt die Lösung, <strong>Überspringen</strong> stellt die Frage zurück. Beides zählt als nicht gelöst.</p>
+      <p>Nach jeder Antwort öffnet der Knopf <strong>i</strong> die ganze Regel mit allen Buchstaben und Ziffern.</p>
+
+      <p class="help-h">Wiederholung</p>
+      <p>Falsch, gelöst oder übersprungen: Die Frage kommt nach frühestens drei anderen Fragen wieder, bis sie richtig beantwortet ist, höchstens zweimal. Danach bleibt sie offen und erscheint im Ergebnis.</p>
+
+      <p class="help-h">Tastatur</p>
+      <p>Enter in einem einzeiligen Feld oder Strg + Enter (Mac: Cmd + Enter) prüft die Antwort und geht danach weiter.</p>
+
+      <hr class="keyline">
+      <p class="help-h">Als App installieren</p>
+      <p><strong>iPhone/iPad</strong>: in Safari Teilen → „Zum Home-Bildschirm“. <strong>Android</strong>: in Chrome Menü → „App installieren“. <strong>Desktop</strong>: Installations-Symbol in der Adresszeile.</p>
+      <p id="offline-status"></p>
+
+      <hr class="keyline">
+      <p class="help-h">Quelle</p>
+      <p id="quelle-text"></p>
+      <p>Regelnamen und Texte sind wörtlich übernommen. Korrigiert sind zwei offensichtliche Tippfehler der Vorlage: Regel 12 a („auweichen“) und Regel 25 c („Buchtabe“).</p>
+      <p>Kein Server, keine Anmeldung, keine Übertragung. Gespeichert werden nur die zuletzt gewählten Einstellungen in diesem Browser.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Panel: Runde beenden ---------- -->
+<div class="sheet-wrap" id="sheet-beenden" hidden>
+  <div class="sheet-scrim" data-schliessen></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-beenden-titel">
+    <button class="sheet-grab" type="button" data-schliessen aria-label="Schliessen"></button>
+    <div class="sheet-head">
+      <div>
+        <p class="plate-label">Runde</p>
+        <h3 class="h-section" id="sheet-beenden-titel">Runde beenden?</h3>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <p>Bisherige Antworten werden ausgewertet. Nicht gestellte Fragen zählen nicht mit.</p>
+      <button class="cta" id="btn-beenden-ja" type="button">Beenden und auswerten</button>
+      <button class="ghost" type="button" data-schliessen>Weiter üben</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script id="kvr-daten" type="application/json">{"quelle":"Kollisionsverhütungsregeln (KVR), Anlage zu § 1 der Verordnung zu den Internationalen Regeln von 1972 zur Verhütung von Zusammenstößen auf See. Fassung ELWIS, Wasserstraßen- und Schifffahrtsverwaltung des Bundes, Stand 17. Dezember 2021 (zuletzt geändert durch Art. 1 der Verordnung vom 7. Dezember 2021, BGBl. I S. 5188).","teile":{"A":"Allgemeines","B":"Ausweich- und Fahrregeln","C":"Lichter und Signalkörper","D":"Schall- und Lichtsignale","E":"Befreiungen","F":"Überprüfung der Einhaltung des Übereinkommens"},"teilBereich":{"A":"1–3","B":"4–19","C":"20–31","D":"32–37","E":"38","F":"39–41"},"abschnitte":{"I":"Verhalten von Fahrzeugen bei allen Sichtverhältnissen","II":"Verhalten von Fahrzeugen, die einander in Sicht haben","III":"Verhalten von Fahrzeugen bei verminderter Sicht"},"regeln":[{"id":"r1","nr":1,"name":"Anwendung","teil":"A","abschnitt":null,"text":[[1,"a)","Diese Regeln gelten für alle Fahrzeuge auf Hoher See und auf den mit dieser zusammenhängenden, von Seeschiffen befahrbaren Gewässern."],[1,"b)","Diese Regeln berühren nicht die von einer zuständigen Behörde erlassenen Sondervorschriften für Reeden, Häfen, Flüsse, Seen oder Binnengewässer, die mit der Hohen See zusammenhängen und von Seeschiffen befahrbar sind. Solche Sondervorschriften müssen mit diesen Regeln soweit wie möglich übereinstimmen."],[1,"c)","Diese Regeln berühren nicht die von der Regierung eines Staates erlassenen Sondervorschriften über zusätzliche Positions- oder Signallichter, Signalkörper oder Schallsignale für Kriegsschiffe und Fahrzeuge im Geleit oder über zusätzliche Positions- oder Signallichter oder Signalkörper für fischende Fahrzeuge in einer Fangflotte. Diese zusätzlichen Positions- oder Signallichter, Signalkörper oder Schallsignale müssen nach Möglichkeit so beschaffen sein, dass sie nicht mit einem anderen, nach diesen Regeln zulässigen Licht, Signalkörper oder Schallsignal verwechselt werden können."],[1,"d)","Die Organisation kann für die Zwecke dieser Regeln Verkehrstrennungsgebiete festlegen."],[1,"e)","In allen Fällen, in denen eine Regierung feststellt, dass ein Fahrzeug besonderer Bauart oder Verwendung eine Regel über Anzahl, Anbringung, Tragweite oder Sichtbereich von Lichtern oder Signalkörpern sowie über Anordnung und Eigenschaften von Schallsignalanlagen nicht in vollem Umfang befolgen kann, muss das Fahrzeug diejenigen sonstigen Bestimmungen über Anzahl, Anbringung, Tragweite oder Sichtbereich von Lichtern oder Signalkörpern sowie über die Anordnung und Eigenschaften von Schallsignalanlagen befolgen, die nach Auffassung der betreffenden Regierung diesen Regeln am nächsten kommen."]],"hinweisName":"Geltungsbereich aller Regeln: Hohe See","hinweisNr":"Erste Regel eines Teils oder Abschnitts"},{"id":"r2","nr":2,"name":"Verantwortlichkeit","teil":"A","abschnitt":null,"text":[[1,"a)","Diese Regeln befreien ein Fahrzeug, dessen Eigentümer, Kapitän oder Besatzung nicht von den Folgen, die durch unzureichende Einhaltung dieser Regeln oder unzureichende sonstige Vorsichtsmaßnahmen entstehen, welche allgemeine seemännische Praxis oder besondere Umstände des Falles erfordern."],[1,"b)","Bei der Auslegung und Befolgung dieser Regeln sind stets alle Gefahren der Schifffahrt und des Zusammenstoßes sowie alle besonderen Umstände einschließlich Behinderungen der betroffenen Fahrzeuge gebührend zu berücksichtigen, die zum Abwenden unmittelbarer Gefahr ein Abweichen von diesen Regeln erfordern."]],"hinweisName":"Wer trägt die Folgen?","hinweisNr":"Regelnummer zwischen 1 und 3"},{"id":"r3","nr":3,"name":"Allgemeine Begriffsbestimmungen","teil":"A","abschnitt":null,"text":[[0,"","Soweit sich aus dem Zusammenhang nicht etwas anderes ergibt, gilt für diese Regeln folgendes:"],[1,"a)","Der Ausdruck \"Fahrzeug\" bezeichnet alle Wasserfahrzeuge einschließlich nicht Wasser verdrängender Fahrzeuge, Bodeneffektfahrzeuge und Wasserflugzeuge, die als Beförderungsmittel auf dem Wasser verwendet werden oder verwendet werden können."],[1,"b)","Der Ausdruck \"Maschinenfahrzeug\" bezeichnet ein Fahrzeug mit Maschinenantrieb."],[1,"c)","Der Ausdruck \"Segelfahrzeug\" bezeichnet ein Fahrzeug unter Segel, dessen Maschinenantrieb, falls vorhanden, nicht benutzt wird."],[1,"d)","Der Ausdruck \"fischendes Fahrzeug\" bezeichnet ein Fahrzeug, das mit Netzen, Leinen, Schleppnetzen oder anderen Fanggeräten fischt, welche die Manövrierfähigkeit einschränken, jedoch nicht ein Fahrzeug, das mit Schleppangeln oder anderen Fanggeräten fischt, welche die Manövrierfähigkeit nicht einschränken."],[1,"e)","Der Ausdruck \"Wasserflugzeug\" bezeichnet ein zum Manövrieren auf dem Wasser eingerichtetes Luftfahrzeug."],[1,"f)","Der Ausdruck \"manövrierunfähiges Fahrzeug\" bezeichnet ein Fahrzeug, das wegen außergewöhnlicher Umstände nicht so manövrieren kann, wie es diese Regeln vorschreiben, und daher einem anderen Fahrzeug nicht ausweichen kann."],[1,"g)","Der Ausdruck \"manövrierbehindertes Fahrzeug\" bezeichnet ein Fahrzeug, das durch die Art seines Einsatzes behindert ist, so zu manövrieren, wie es diese Regeln vorschreiben, und daher einem anderen Fahrzeug nicht ausweichen kann."],[1,"","Der Ausdruck \"manövrierbehinderte Fahrzeuge\" umfasst, ohne darauf beschränkt zu sein:"],[2,"i)","Ein Fahrzeug, das ein Seezeichen, Unterwasserkabel oder eine Rohrleitung auslegt, versorgt oder aufnimmt;"],[2,"ii)","ein Fahrzeug, das baggert, Forschungs- oder Vermessungsarbeiten oder Unterwasserarbeiten ausführt;"],[2,"iii)","ein Fahrzeug in Fahrt, das Versorgungsmanöver ausführt oder mit der Übergabe von Personen, Ausrüstung oder Ladung beschäftigt ist;"],[2,"iv)","ein Fahrzeug, auf dem Luftfahrzeuge starten oder landen;"],[2,"v)","ein Fahrzeug beim Minenräumen;"],[2,"vi)","ein Fahrzeug während eines Schleppvorgangs, bei dem das schleppende Fahrzeug und sein Anhang erheblich behindert sind, vom Kurs abzuweichen."],[1,"h)","Der Ausdruck \"Tiefgang behindertes Fahrzeug\" bezeichnet ein Maschinenfahrzeug, das durch seinen Tiefgang im Verhältnis zu der vorhandenen Tiefe und Breite des befahrbaren Gewässers erheblich behindert ist, von seinem zu verfolgenden Kurs abzuweichen."],[1,"i)","Der Ausdruck \"in Fahrt\" bedeutet, dass ein Fahrzeug weder vor Anker liegt noch an Land festgemacht ist noch auf Grund sitzt."],[1,"j)","Die Ausdrücke \"Länge\" und \"Breite\" eines Fahrzeugs bedeuten die Länge über alles und die größte Breite."],[1,"k)","Fahrzeuge gelten nur dann als einander in Sicht befindlich, wenn jedes vom anderen optisch wahrgenommen werden kann."],[1,"l)","Der Ausdruck \"verminderte Sicht\" bezeichnet jeden Zustand, bei dem die Sicht durch Nebel, dickes Wetter, Schneefall, heftige Regengüsse, Sandstürme oder ähnliche Ursachen eingeschränkt ist."],[1,"m)","Der Ausdruck \"Bodeneffektfahrzeug (BEF)\" bezeichnet ein in verschiedenen Betriebsweisen einsetzbares Fahrzeug, das in seiner Hauptbetriebsweise unter Ausnutzung des Bodeneffektes in nächster Nähe zur Oberfläche fliegt."]],"hinweisName":"Definitionen: Fahrzeug, Maschinenfahrzeug …","hinweisNr":"Regelnummer zwischen 1 und 3"},{"id":"r4","nr":4,"name":"Anwendung","teil":"B","abschnitt":"I","text":[[0,"","Die Regeln dieses Abschnitts gelten bei allen Sichtverhältnissen."]],"hinweisName":"Geltungsbereich: alle Sichtverhältnisse","hinweisNr":"Erste Regel eines Teils oder Abschnitts"},{"id":"r5","nr":5,"name":"Ausguck","teil":"B","abschnitt":"I","text":[[0,"","Jedes Fahrzeug muss jederzeit durch Sehen und Hören sowie durch jedes andere verfügbare Mittel, das den gegebenen Umständen und Bedingungen entspricht, gehörigen Ausguck halten, der einen vollständigen Überblick über die Lage und die Möglichkeit der Gefahr eines Zusammenstoßes gibt."]],"hinweisName":"Sehen und Hören","hinweisNr":"Regelnummer zwischen 4 und 10","volltext":{"art":"ganz","auftrag":"Zusätzlich den vollständigen Regeltext eingeben.","soll":"Jedes Fahrzeug muss jederzeit durch Sehen und Hören sowie durch jedes andere verfügbare Mittel, das den gegebenen Umständen und Bedingungen entspricht, gehörigen Ausguck halten, der einen vollständigen Überblick über die Lage und die Möglichkeit der Gefahr eines Zusammenstoßes gibt."}},{"id":"r6","nr":6,"name":"Sichere Geschwindigkeit","teil":"B","abschnitt":"I","text":[[0,"","Jedes Fahrzeug muss jederzeit mit einer sicheren Geschwindigkeit fahren, so dass es geeignete und wirksame Maßnahmen treffen kann, um einen Zusammenstoß zu vermeiden, und innerhalb einer Entfernung zum Stehen gebracht werden kann, die den gegebenen Umständen und Bedingungen entspricht."],[0,"","Zur Bestimmung der sicheren Geschwindigkeit müssen unter anderem folgende Umstände berücksichtigt werden:"],[1,"a)","Von allen Fahrzeugen:"],[2,"i)","die Sichtverhältnisse;"],[2,"ii)","die Verkehrsdichte einschließlich Ansammlungen von Fischerei- oder sonstigen Fahrzeugen;"],[2,"iii)","die Manövrierfähigkeit des Fahrzeugs unter besonderer Berücksichtigung der Stoppstrecken und der Dreheigenschaften unter den gegebenen Bedingungen;"],[2,"iv)","bei Nacht eine Hintergrundhelligkeit, z. B. durch Lichter an Land oder eine Rückstrahlung der eigenen Lichter;"],[2,"v)","die Wind-, Seegangs- und Strömungsverhältnisse sowie die Nähe von Schifffahrtsgefahren;"],[2,"vi)","der Tiefgang im Verhältnis zur vorhandenen Wassertiefe."],[1,"b)","Zusätzlich von Fahrzeugen mit betriebsfähigem Radar:"],[2,"i)","die Eigenschaften, die Wirksamkeit und die Leistungsgrenzen der Radaranlagen;"],[2,"ii)","jede Einschränkung, die sich aus dem eingeschalteten Entfernungsbereich des Radars ergibt;"],[2,"iii)","der Einfluss von Seegang, Wetter und anderen Störquellen auf die Radaranzeige;"],[2,"iv)","die Möglichkeit, dass kleine Fahrzeuge, Eis und andere schwimmende Gegenstände durch Radar nicht innerhalb einer ausreichenden Entfernung geortet werden;"],[2,"v)","die Anzahl, die Lage und die Bewegung der vom Radar georteten Fahrzeuge;"],[2,"vi)","die genauere Feststellung der Sichtweite, die der Gebrauch des Radars durch Entfernungsmessung in der Nähe von Fahrzeugen oder anderen Gegenständen ermöglicht."]],"hinweisName":"Rechtzeitig zum Stehen kommen","hinweisNr":"Regelnummer zwischen 4 und 10","volltext":{"art":"absatz1","auftrag":"Zusätzlich den ersten Absatz der Regel eingeben.","soll":"Jedes Fahrzeug muss jederzeit mit einer sicheren Geschwindigkeit fahren, so dass es geeignete und wirksame Maßnahmen treffen kann, um einen Zusammenstoß zu vermeiden, und innerhalb einer Entfernung zum Stehen gebracht werden kann, die den gegebenen Umständen und Bedingungen entspricht."}},{"id":"r7","nr":7,"name":"Möglichkeit der Gefahr eines Zusammenstoßes","teil":"B","abschnitt":"I","text":[[1,"a)","Jedes Fahrzeug muss mit allen verfügbaren Mitteln entsprechend den gegebenen Umständen und Bedingungen feststellen, ob die Möglichkeit der Gefahr eines Zusammenstoßes besteht. Im Zweifelsfall ist diese Möglichkeit anzunehmen."],[1,"b)","Um eine frühzeitige Warnung vor der Möglichkeit der Gefahr eines Zusammenstoßes zu erhalten, muss eine vorhandene und betriebsfähige Radaranlage gehörig gebraucht werden, und zwar einschließlich der Anwendung der großen Entfernungsbereiche, des Plottens oder eines gleichwertig systematischen Verfahrens zur Überwachung georteter Objekte."],[1,"c)","Folgerungen aus unzulänglichen Informationen, insbesondere aus unzulänglichen Radarinformationen, müssen unterbleiben."],[1,"d)","Bei der Feststellung, ob die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss unter anderem folgendes berücksichtigt werden:"],[2,"i)","Eine solche Möglichkeit ist anzunehmen, wenn die Kompasspeilung eines sich nähernden Fahrzeugs sich nicht merklich ändert;"],[2,"ii)","eine solche Möglichkeit kann manchmal auch bestehen, wenn die Peilung sich merklich ändert, insbesondere bei der Annäherung an ein sehr großes Fahrzeug, an einen Schleppzug oder an ein Fahrzeug nahebei."]],"hinweisName":"Peilung ändert sich nicht merklich","hinweisNr":"Regelnummer zwischen 4 und 10"},{"id":"r8","nr":8,"name":"Manöver zur Vermeidung von Zusammenstößen","teil":"B","abschnitt":"I","text":[[1,"a)","Jedes Manöver zur Vermeidung eines Zusammenstoßes muss in Übereinstimmung mit den Regeln dieses Teiles erfolgen und, wenn es die Umstände zulassen, entschlossen, rechtzeitig und so ausgeführt werden, wie gute Seemannschaft es erfordert."],[1,"b)","Jede Änderung des Kurses und/oder der Geschwindigkeit zur Vermeidung eines Zusammenstoßes muss, wenn es die Umstände zulassen, so groß sein, dass ein anderes Fahrzeug optisch oder durch Radar sie schnell erkennen kann; aufeinander folgende kleine Änderungen des Kurses und/oder der Geschwindigkeit sollen vermieden werden."],[1,"c)","Ist genügend Seeraum vorhanden, so kann eine Kursänderung allein die wirksamste Maßnahme zum Meiden des Nahbereichs sein, vorausgesetzt, dass sie rechtzeitig vorgenommen wird, durchgreifend ist und nicht in einen anderen Nahbereich führt."],[1,"d)","Ein Manöver zur Vermeidung eines Zusammenstoßes mit einem anderen Fahrzeug muss zu einem sicheren Passierabstand führen. Die Wirksamkeit des Manövers muss sorgfältig überprüft werden, bis das andere Fahrzeug endgültig vorbei und klar ist."],[1,"e)","Um einen Zusammenstoß zu vermeiden oder mehr Zeit zur Beurteilung der Lage zu gewinnen, muss ein Fahrzeug erforderlichenfalls seine Fahrt mindern oder durch Stoppen oder Rückwärtsgehen jegliche Fahrt wegnehmen."],[1,"f)",""],[2,"i)","Ein Fahrzeug, das auf Grund einer dieser Regeln verpflichtet ist, die Durchfahrt oder die sichere Durchfahrt eines anderen Fahrzeugs nicht zu behindern, muss, wenn es die Umstände erfordern, frühzeitig Maßnahmen ergreifen, um genügend Raum für die sichere Durchfahrt des anderen Fahrzeugs zu lassen."],[2,"ii)","Ein Fahrzeug, das verpflichtet ist, die Durchfahrt oder die sichere Durchfahrt eines anderen Fahrzeugs nicht zu behindern, ist von dieser Verpflichtung nicht befreit, wenn es sich dem anderen Fahrzeug so nähert, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht, und muss, wenn es Maßnahmen ergreift, in vollem Umfang die Maßnahmen berücksichtigen, die nach den Regeln dieses Teiles vorgeschrieben sind."],[2,"iii)","Ein Fahrzeug, dessen Durchfahrt nicht behindert werden darf, bleibt in vollem Umfang verpflichtet, die Regeln dieses Teiles einzuhalten, wenn die beiden Fahrzeuge sich einander so nähern, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht."]],"hinweisName":"Entschlossen, rechtzeitig, gute Seemannschaft","hinweisNr":"Regelnummer zwischen 4 und 10"},{"id":"r9","nr":9,"name":"Enge Fahrwasser","teil":"B","abschnitt":"I","text":[[1,"a)","Ein Fahrzeug, das der Richtung eines engen Fahrwassers oder einer Fahrrinne folgt, muss sich so nahe am äußeren Rand des Fahrwassers oder der Fahrrinne an seiner Steuerbordseite halten, wie dies ohne Gefahr möglich ist."],[1,"b)","Ein Fahrzeug von weniger als 20 Meter Länge oder ein Segelfahrzeug darf nicht die Durchfahrt eines Fahrzeugs behindern, das nur innerhalb eines engen Fahrwassers oder einer Fahrrinne sicher fahren kann."],[1,"c)","Ein fischendes Fahrzeug darf nicht die Durchfahrt eines anderen Fahrzeugs behindern, das innerhalb eines engen Fahrwassers oder einer Fahrrinne fährt."],[1,"d)","Ein Fahrzeug darf ein enges Fahrwasser oder eine Fahrrinne nicht queren, wenn dadurch die Durchfahrt eines Fahrzeugs behindert wird, das nur innerhalb eines solchen Fahrwassers oder einer solchen Fahrrinne sicher fahren kann. Das letztere Fahrzeug darf das in Regel 34 Buchstabe d vorgeschriebene Schallsignal geben, wenn es über die Absichten des querenden Fahrzeugs im Zweifel ist."],[1,"e)",""],[2,"i)","Kann in einem engen Fahrwasser oder in einer Fahrrinne nur dann sicher überholt werden, wenn das zu überholende Fahrzeug mitwirkt, so muss das überholende Fahrzeug seine Absicht durch das entsprechende Signal nach Regel 34 Buchstabe c Ziffer i anzeigen. Ist das zu überholende Fahrzeug einverstanden, so muss es das entsprechende Signal nach Regel 34 Buchstabe c Ziffer ii geben und Maßnahmen für ein sicheres Passieren treffen. Im Zweifelsfall darf es die in Regel 34 Buchstabe d vorgeschriebenen Signale geben."],[2,"ii)","Diese Regel befreit das überholende Fahrzeug nicht von seiner Verpflichtung nach Regel 13."],[1,"f)","Ein Fahrzeug, das sich einer Krümmung oder einem Abschnitt eines engen Fahrwassers oder einer Fahrrinne nähert, wo andere Fahrzeuge durch ein dazwischen liegendes Sichthindernis verdeckt sein können, muss mit besonderer Aufmerksamkeit und Vorsicht fahren und das entsprechende Signal nach Regel 34 Buchstabe e geben."],[1,"g)","Jedes Fahrzeug muss, wenn es die Umstände zulassen, das Ankern in einem engen Fahrwasser vermeiden."]],"hinweisName":"Steuerbordseite der Fahrrinne halten","hinweisNr":"Regelnummer zwischen 4 und 10"},{"id":"r10","nr":10,"name":"Verkehrstrennungsgebiete","teil":"B","abschnitt":"I","text":[[1,"a)","Diese Regel gilt in Verkehrstrennungsgebieten, die von der Organisation festgelegt worden sind; sie befreit ein Fahrzeug nicht von seiner Verpflichtung auf Grund einer anderen Regel."],[1,"b)","Ein Fahrzeug, das ein Verkehrstrennungsgebiet benutzt, muss"],[2,"i)","auf dem entsprechenden Einbahnweg in der allgemeinen Verkehrsrichtung dieses Weges fahren;"],[2,"ii)","sich, soweit möglich, von der Trennlinie oder der Trennzone klar halten;"],[2,"iii)","in der Regel an den Enden des Einbahnwegs ein- oder auslaufen; wenn es jedoch von der Seite ein- oder ausläuft, muss dies in einem möglichst kleinen Winkel zur allgemeinen Verkehrsrichtung erfolgen."],[1,"c)","Ein Fahrzeug muss soweit wie möglich das Queren von Einbahnwegen vermeiden; ist es jedoch zum Queren gezwungen, so muss dies möglichst mit der Kielrichtung im rechten Winkel zur allgemeinen Verkehrsrichtung erfolgen."],[1,"d)",""],[2,"i)","Ein Fahrzeug darf eine Küstenverkehrszone nicht benutzen, wenn es den entsprechenden Einbahnweg des angrenzenden Verkehrstrennungsgebiets sicher befahren kann. Fahrzeuge von weniger als 20 Meter Länge, Segelfahrzeuge und fischende Fahrzeuge dürfen die Küstenverkehrszone jedoch benutzen."],[2,"ii)","Ungeachtet der Ziffer i darf ein Fahrzeug eine Küstenverkehrszone benutzen, wenn es sich auf dem Weg zu oder von einem Hafen, einer Einrichtung oder einem Bauwerk vor der Küste, einer Lotsenstation oder einem sonstigen innerhalb der Küstenverkehrszone gelegenen Ort befindet, oder zur Abwendung einer unmittelbaren Gefahr."],[1,"e)","Außer beim Queren oder beim Einlaufen in einen Einbahnweg oder beim Verlassen eines Einbahnweges darf ein Fahrzeug in der Regel nicht in eine Trennzone einlaufen oder eine Trennlinie überfahren, ausgenommen"],[2,"i)","in Notfällen zur Abwendung einer unmittelbaren Gefahr;"],[2,"ii)","zum Fischen innerhalb einer Trennzone."],[1,"f)","Im Bereich des Zu- und Abgangs der Verkehrstrennungsgebiete muss ein Fahrzeug mit besonderer Vorsicht fahren."],[1,"g)","Ein Fahrzeug muss das Ankern innerhalb eines Verkehrstrennungsgebietes oder im Bereich des Zu- und Abgangs soweit wie möglich vermeiden."],[1,"h)","Ein Fahrzeug, das ein Verkehrstrennungsgebiet nicht benutzt, muss von diesem einen möglichst großen Abstand halten."],[1,"i)","Ein fischendes Fahrzeug darf die Durchfahrt eines Fahrzeugs auf dem Einbahnweg nicht behindern."],[1,"j)","Ein Fahrzeug von weniger als 20 Meter Länge oder ein Segelfahrzeug darf die sichere Durchfahrt eines Maschinenfahrzeugs auf dem Einbahnweg nicht behindern."],[1,"k)","Ein manövrierbehindertes Fahrzeug, das in einem Verkehrstrennungsgebiet Arbeiten zur Aufrechterhaltung der Sicherheit der Schifffahrt durchführt, ist von der Befolgung dieser Regel befreit, soweit dies zur Ausführung der Arbeiten erforderlich ist."],[1,"l)","Ein manövrierbehindertes Fahrzeug, das in einem Verkehrstrennungsgebiet Unterwasserkabel auslegt, versorgt oder aufnimmt, ist von der Befolgung dieser Regel befreit, soweit dies zur Ausführung der Arbeiten erforderlich ist."]],"hinweisName":"Einbahnweg, Trennzone, Küstenverkehrszone","hinweisNr":"Regelnummer zwischen 4 und 10"},{"id":"r11","nr":11,"name":"Anwendung","teil":"B","abschnitt":"II","text":[[0,"","Die Regeln dieses Abschnitts gelten für Fahrzeuge, die einander in Sicht haben."]],"hinweisName":"Geltungsbereich: Fahrzeuge in Sicht","hinweisNr":"Erste Regel eines Teils oder Abschnitts"},{"id":"r12","nr":12,"name":"Segelfahrzeuge","teil":"B","abschnitt":"II","text":[[1,"a)","Wenn zwei Segelfahrzeuge sich einander so nähern, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss das eine dem anderen wie folgt ausweichen:"],[2,"i)","Wenn sie den Wind nicht von derselben Seite haben, muss das Fahrzeug, das den Wind von Backbord hat, dem anderen ausweichen;"],[2,"ii)","wenn sie den Wind von derselben Seite haben, muss das luvwärtige Fahrzeug dem leewärtigen ausweichen;"],[2,"iii)","wenn ein Fahrzeug mit Wind von Backbord ein Fahrzeug in Luv sichtet und nicht mit Sicherheit feststellen kann, ob das andere Fahrzeug den Wind von Backbord oder von Steuerbord hat, muss es dem anderen ausweichen."],[1,"b)","Im Sinne dieser Regel ist die Luvseite diejenige Seite, die dem gesetzten Großsegel gegenüber liegt, auf Rahseglern diejenige Seite, die dem größten gesetzten Schratsegel gegenüber liegt."]],"hinweisName":"Wind von Backbord, Luv und Lee","hinweisNr":"Regelnummer zwischen 11 und 18","stichpunkte":{"auftrag":"Zusätzlich Buchstabe a mit den Ziffern i, ii und iii in Stichworten eingeben.","felder":[{"feld":"a)","soll":"Wenn zwei Segelfahrzeuge sich einander so nähern, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss das eine dem anderen wie folgt ausweichen:","hinweis":"Zwei Segelfahrzeuge nähern sich","elemente":[{"label":"Segelfahrzeuge","treffer":["segel","^segler"]},{"label":"Gefahr eines Zusammenstoßes","treffer":["zusammenstoss","kollision"]}]},{"feld":"i)","soll":"Wenn sie den Wind nicht von derselben Seite haben, muss das Fahrzeug, das den Wind von Backbord hat, dem anderen ausweichen;","hinweis":"Wind von verschiedenen Seiten","elemente":[{"label":"Wind von Backbord","treffer":["backbord","=bb"]},{"label":"ausweichen","treffer":["ausweich","weicht aus","weichen aus"]}]},{"feld":"ii)","soll":"wenn sie den Wind von derselben Seite haben, muss das luvwärtige Fahrzeug dem leewärtigen ausweichen;","hinweis":"Wind von derselben Seite","elemente":[{"label":"derselben Seite","treffer":["selben seite","selbe seite","gleichen seite","gleiche seite","gleicher seite"]},{"label":"Luv","treffer":["^luv"]},{"label":"Lee","treffer":["^lee"]}]},{"feld":"iii)","soll":"wenn ein Fahrzeug mit Wind von Backbord ein Fahrzeug in Luv sichtet und nicht mit Sicherheit feststellen kann, ob das andere Fahrzeug den Wind von Backbord oder von Steuerbord hat, muss es dem anderen ausweichen.","hinweis":"Windseite des anderen unklar","elemente":[{"label":"Wind von Backbord","treffer":["backbord","=bb"]},{"label":"Luv","treffer":["^luv"]},{"label":"nicht sicher feststellbar","verneinend":true,"treffer":["nicht sicher","nicht mit sicherheit","unsicher","unklar","zweifel","nicht feststell","nicht erkenn","nicht eindeutig","nicht klar","nicht bestimm"]}]}]}},{"id":"r13","nr":13,"name":"Überholen","teil":"B","abschnitt":"II","text":[[1,"a)","Ungeachtet der Regeln des Teiles B Abschnitte I und II muss jedes Fahrzeug beim Überholen dem anderen ausweichen."],[1,"b)","Ein Fahrzeug gilt als überholendes Fahrzeug, wenn es sich einem anderen aus einer Richtung von mehr als 22,5 Grad achterlicher als querab nähert und daher gegenüber dem zu überholenden Fahrzeug so steht, dass es bei Nacht nur dessen Hecklicht, aber keines der Seitenlichter sehen könnte."],[1,"c)","Kann ein Fahrzeug nicht sicher erkennen, ob es ein anderes überholt, so muss es dies annehmen und entsprechend handeln."],[1,"d)","Durch eine spätere Änderung der Peilung wird das überholende Fahrzeug weder zu einem kreuzenden im Sinne dieser Regeln noch wird es von der Verpflichtung entbunden, dem anderen Fahrzeug auszuweichen, bis es dieses klar passiert hat."]],"hinweisName":"Mehr als 22,5° achterlicher als querab","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r14","nr":14,"name":"Entgegengesetzte Kurse","teil":"B","abschnitt":"II","text":[[1,"a)","Wenn zwei Maschinenfahrzeuge auf entgegengesetzten oder fast entgegengesetzten Kursen sich einander so nähern, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss jedes seinen Kurs nach Steuerbord so ändern, dass sie einander an Backbordseite passieren."],[1,"b)","Eine solche Lage muss angenommen werden, wenn ein Fahrzeug das andere recht voraus oder fast recht voraus sieht, bei Nacht die Topplichter des anderen in Linie oder fast in Linie und/oder beide Seitenlichter sieht und am Tage das andere Fahrzeug dementsprechend ausmacht."],[1,"c)","Kann ein Fahrzeug nicht sicher erkennen, ob eine solche Lage besteht, so muss es von dieser ausgehen und entsprechend handeln."]],"hinweisName":"Beide ändern Kurs nach Steuerbord","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r15","nr":15,"name":"Kreuzende Kurse","teil":"B","abschnitt":"II","text":[[0,"","Wenn die Kurse zweier Maschinenfahrzeuge einander so kreuzen, dass die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss dasjenige ausweichen, welches das andere an seiner Steuerbordseite hat; wenn die Umstände es zulassen, muss es vermeiden, den Bug des anderen Fahrzeugs zu kreuzen."]],"hinweisName":"Wer den anderen an Steuerbord hat","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r16","nr":16,"name":"Maßnahmen des Ausweichpflichtigen","teil":"B","abschnitt":"II","text":[[0,"","Jedes ausweichpflichtige Fahrzeug muss möglichst frühzeitig und durchgreifend handeln, um sich gut klar zu halten."]],"hinweisName":"Frühzeitig und durchgreifend handeln","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r17","nr":17,"name":"Maßnahmen des Kurshalters","teil":"B","abschnitt":"II","text":[[1,"a)",""],[2,"i)","Muss von zwei Fahrzeugen eines ausweichen, so muss das andere Kurs und Geschwindigkeit beibehalten (Kurshalter)."],[2,"ii)","Der Kurshalter darf jedoch zur Abwendung eines Zusammenstoßes selbst manövrieren, sobald klar wird, dass der Ausweichpflichtige nicht angemessen nach diesen Regeln handelt."],[1,"b)","Ist der Kurshalter dem Ausweichpflichtigen aus irgendeinem Grund so nahe gekommen, dass ein Zusammenstoß durch Manöver des letzteren allein nicht vermieden werden kann, so muss der Kurshalter so manövrieren, wie es zur Vermeidung eines Zusammenstoßes am dienlichsten ist."],[1,"c)","Ein Maschinenfahrzeug, das bei kreuzenden Kursen nach Buchstabe a Ziffer ii manövriert, um einen Zusammenstoß mit einem anderen Maschinenfahrzeug zu vermeiden, darf seinen Kurs, sofern die Umstände es zulassen, gegenüber einem Fahrzeug an seiner Backbordseite nicht nach Backbord ändern."],[1,"d)","Diese Regel befreit das ausweichpflichtige Fahrzeug nicht von seiner Ausweichpflicht."]],"hinweisName":"Kurs und Geschwindigkeit beibehalten","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r18","nr":18,"name":"Verantwortlichkeiten der Fahrzeuge untereinander","teil":"B","abschnitt":"II","text":[[0,"","Sofern in den Regeln 9, 10 und 13 nicht etwas anderes bestimmt ist, gilt folgendes:"],[1,"a)","Ein Maschinenfahrzeug in Fahrt muss ausweichen"],[2,"i)","einem manövrierunfähigen Fahrzeug;"],[2,"ii)","einem manövrierbehinderten Fahrzeug;"],[2,"iii)","einem fischenden Fahrzeug;"],[2,"iv)","einem Segelfahrzeug."],[1,"b)","Ein Segelfahrzeug in Fahrt muss ausweichen"],[2,"i)","einem manövrierunfähigen Fahrzeug;"],[2,"ii)","einem manövrierbehinderten Fahrzeug;"],[2,"iii)","einem fischenden Fahrzeug."],[1,"c)","Ein fischendes Fahrzeug in Fahrt muss, soweit möglich, ausweichen"],[2,"i)","einem manövrierunfähigen Fahrzeug;"],[2,"ii)","einem manövrierbehinderten Fahrzeug."],[1,"d)",""],[2,"i)","Jedes Fahrzeug, mit Ausnahme eines manövrierunfähigen oder manövrierbehinderten muss, sofern die Umstände es zulassen, vermeiden, die sichere Durchfahrt eines Tiefgang behinderten Fahrzeugs zu behindern, das Signale nach Regel 28 zeigt."],[2,"ii)","Ein Tiefgang behindertes Fahrzeug muss unter Berücksichtigung seines besonderen Zustands mit besonderer Vorsicht navigieren."],[1,"e)","Ein Wasserflugzeug auf dem Wasser muss sich in der Regel von allen Fahrzeugen gut klar halten und vermeiden, deren Manöver zu behindern. Sobald jedoch die Möglichkeit der Gefahr eines Zusammenstoßes besteht, muss es die Regeln dieses Teiles befolgen."],[1,"f)",""],[2,"i)","Ein Bodeneffektfahrzeug muss sich bei Start, Landung und oberflächennahem Flug von allen Fahrzeugen gut klar halten und vermeiden, deren Manöver zu behindern;"],[2,"ii)","ein Bodeneffektfahrzeug, das auf der Wasseroberfläche betrieben wird, muss die Regeln dieses Teiles für Maschinenfahrzeuge erfüllen."]],"hinweisName":"Wer muss wem ausweichen?","hinweisNr":"Regelnummer zwischen 11 und 18"},{"id":"r19","nr":19,"name":"Verhalten von Fahrzeugen bei verminderter Sicht","teil":"B","abschnitt":"III","text":[[1,"a)","Diese Regel gilt für Fahrzeuge, die einander nicht in Sicht haben, wenn sie innerhalb oder in der Nähe eines Gebiets mit verminderter Sicht fahren."],[1,"b)","Jedes Fahrzeug muss mit sicherer Geschwindigkeit fahren, die den gegebenen Umständen und Bedingungen der verminderten Sicht angepasst ist. Ein Maschinenfahrzeug muss seine Maschinen für ein sofortiges Manöver bereit halten."],[1,"c)","Jedes Fahrzeug muss bei der Befolgung der Regeln des Abschnitts I die gegebenen Umstände und Bedingungen der verminderten Sicht gehörig berücksichtigen."],[1,"d)","Ein Fahrzeug, das ein anderes Fahrzeug lediglich mit Radar ortet, muss ermitteln, ob sich eine Nahbereichslage entwickelt und/oder die Möglichkeit der Gefahr eines Zusammenstoßes besteht. Ist dies der Fall, so muss es frühzeitig Gegenmaßnahmen treffen; ändert es deshalb seinen Kurs, so muss es nach Möglichkeit folgendes vermeiden:"],[2,"i)","eine Kursänderung nach Backbord gegenüber einem Fahrzeug vorlicher als querab, außer beim Überholen;"],[2,"ii)","eine Kursänderung auf ein Fahrzeug zu, das querab oder achterlicher als querab ist."],[1,"e)","Außer nach einer Feststellung, dass keine Möglichkeit oder Gefahr eines Zusammenstoßes besteht, muss jedes Fahrzeug, das anscheinend vorlicher als querab das Nebelsignal eines anderen Fahrzeugs hört oder das eine Nahbereichslage mit einem anderen Fahrzeug vorlicher als querab nicht vermeiden kann, seine Fahrt auf das für die Erhaltung der Steuerfähigkeit geringstmögliche Maß verringern. Erforderlichenfalls muss es jegliche Fahrt wegnehmen und in jedem Fall mit äußerster Vorsicht manövrieren, bis die Gefahr eines Zusammenstoßes vorüber ist."]],"hinweisName":"Nebel, Ortung nur mit Radar","hinweisNr":"Regelnummer zwischen 4 und 19"},{"id":"r23","nr":23,"name":"Maschinenfahrzeuge in Fahrt","teil":"C","abschnitt":null,"text":[[1,"a)","Ein Maschinenfahrzeug in Fahrt muss führen"],[2,"i)","ein Topplicht vorn;"],[2,"ii)","ein zweites Topplicht achterlicher und höher als das vordere; ein Fahrzeug von weniger als 50 Meter Länge kann ein solches Licht führen, ist jedoch nicht dazu verpflichtet;"],[2,"iii)","Seitenlichter;"],[2,"iv)","ein Hecklicht."],[1,"b)","Ein Luftkissenfahrzeug, das im nicht Wasser verdrängenden Zustand navigiert, muss außer den unter Buchstabe a vorgeschriebenen Lichtern ein gelbes Rundumlicht als Funkellicht führen."],[1,"c)","Nur bei Start, Landung und oberflächennahem Flug muss ein Bodeneffektfahrzeug zusätzlich zu den unter Buchstabe a vorgeschriebenen Lichtern ein leistungsstarkes rotes Rundumlicht als Funkellicht führen."],[1,"d)",""],[2,"i)","Ein Maschinenfahrzeug von weniger als 12 Meter Länge darf an Stelle der unter Buchstabe a vorgeschriebenen Lichter ein weißes Rundumlicht und Seitenlichter führen;"],[2,"ii)","ein Maschinenfahrzeug von weniger als 7 Meter Länge, dessen Höchstgeschwindigkeit 7 Knoten nicht übersteigt, darf an Stelle der unter Buchstabe a vorgeschriebenen Lichter ein weißes Rundumlicht und muss, wenn möglich, außerdem Seitenlichter führen;"],[2,"iii)","das Topplicht oder das weiße Rundumlicht auf einem Maschinenfahrzeug von weniger als 12 Meter Länge darf außerhalb der Längsachse des Fahrzeugs geführt werden, wenn die Anbringung über die Längsachse nicht möglich ist, vorausgesetzt, dass die Seitenlichter in einer Zweifarbenlaterne über der Längsachse des Fahrzeugs geführt oder so nahe wie möglich in derselben Längsachse wie das Topplicht oder das weiße Rundumlicht angebracht werden."]],"hinweisName":"Topplicht, Seitenlichter, Hecklicht","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r24","nr":24,"name":"Schleppen und Schieben","teil":"C","abschnitt":null,"text":[[1,"a)","Ein schleppendes Maschinenfahrzeug muss führen"],[2,"i)","an Stelle des in Regel 23 Buchstabe a Ziffer i oder ii vorgeschriebenen Lichtes zwei Topplichter senkrecht übereinander. Wenn der Schleppzug vom Heck des schleppenden Fahrzeugs bis zum Ende des Anhangs länger als 200 Meter ist, drei solche Lichter senkrecht übereinander;"],[2,"ii)","Seitenlichter;"],[2,"iii)","ein Hecklicht;"],[2,"iv)","ein Schlepplicht senkrecht über dem Hecklicht;"],[2,"v)","wenn der Schleppzug länger als 200 Meter ist, einen Rhombus förmigen Signalkörper dort, wo er am besten gesehen werden kann."],[1,"b)","Sind ein schiebendes und ein geschobenes Fahrzeug zu einer zusammengesetzten Einheit starr miteinander verbunden, so gelten sie als ein Maschinenfahrzeug und müssen die in Regel 23 vorgeschriebenen Lichter führen."],[1,"c)","Ein schiebendes oder längsseits schleppendes Maschinenfahrzeug muss, ausgenommen im Fall einer zusammengesetzten Einheit, führen"],[2,"i)","an Stelle des in Regel 23 Buchstabe a Ziffer i oder ii vorgeschriebenen Lichtes zwei Topplichter senkrecht übereinander;"],[2,"ii)","Seitenlichter;"],[2,"iii)","ein Hecklicht."],[1,"d)","Ein Maschinenfahrzeug, für das Buchstabe a oder c dieser Regel gilt, muss auch Regel 23 Buchstabe a Ziffer ii befolgen."],[1,"e)","Ein geschlepptes Fahrzeug oder ein geschleppter Gegenstand mit Ausnahme der unter Buchstabe g genannten muss führen"],[2,"i)","Seitenlichter;"],[2,"ii)","ein Hecklicht;"],[2,"iii)","wenn der Schleppzug länger als 200 Meter ist, einen Rhombus förmigen Signalkörper dort, wo er am besten gesehen werden kann."],[1,"f)","In beliebiger Anzahl längsseits geschleppte oder in einer Gruppe geschobene Fahrzeuge müssen die Lichter wie ein einzelnes Fahrzeug führen, wobei"],[2,"i)","ein geschobenes Fahrzeug, das nicht Teil einer zusammengesetzten Einheit ist, vorn Seitenlichter führen muss;"],[2,"ii)","ein längsseits geschlepptes Fahrzeug ein Hecklicht und vorn Seitenlichter führen muss."],[1,"g)","Ein schwer erkennbares, teilweise getauchtes geschlepptes Fahrzeug oder ein schwer erkennbarer, teilweise getauchter geschleppter Gegenstand oder eine Kombination solcher Fahrzeuge oder Gegenstände muss führen"],[2,"i)","bei einer Breite von weniger als 25 Meter je ein weißes Rundumlicht an oder nahe dem vorderen und hinteren Ende, wobei Transportschläuche das vordere Licht nicht zu führen brauchen;"],[2,"ii)","bei einer Breite von 25 und mehr Meter zwei zusätzliche weiße Rundumlichter an oder nahe den Außenseiten;"],[2,"iii)","bei einer Länge von mehr als 100 Meter zusätzliche weiße Rundumlichter zwischen den unter den Ziffern i und ii vorgeschriebenen Lichtern, so dass der Abstand zwischen den Lichtern nicht mehr als 100 Meter beträgt;"],[2,"iv)","einen Rhombus förmigen Signalkörper an oder nahe dem äußersten Ende des letzten geschleppten Fahrzeugs oder Gegenstands und, wenn der Schleppzug länger als 200 Meter ist, zusätzlich einen Rhombus förmigen Signalkörper dort, wo er am besten gesehen werden kann, und so weit vorn wie möglich."],[1,"h)","Kann ein geschlepptes Fahrzeug oder ein geschleppter Gegenstand die unter Buchstabe e oder g vorgeschriebenen Lichter oder Signalkörper aus einem vertretbaren Grund nicht führen, so müssen alle möglichen Maßnahmen getroffen werden, um das geschleppte Fahrzeug oder den geschleppten Gegenstand zu beleuchten oder die Anwesenheit eines solchen Fahrzeugs oder Gegenstands zumindest erkennbar zu machen."],[1,"i)","Kann ein üblicherweise nicht bei Schleppvorgängen eingesetztes Fahrzeug aus einem vertretbaren Grund die unter Buchstabe a oder c vorgeschriebenen Lichter nicht zeigen, so braucht es diese Lichter nicht zu führen, wenn es ein anderes Fahrzeug schleppt, das sich in Not befindet oder aus anderen Gründen Hilfe benötigt. Es müssen alle nach Regel 36 zulässigen möglichen Maßnahmen getroffen werden, um die Art der Verbindung zwischen dem schleppenden Fahrzeug und dem geschleppten Fahrzeug erkennbar zu machen, insbesondere durch Anleuchten der Schleppleine."]],"hinweisName":"Gelbes Licht über dem Hecklicht","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r25","nr":25,"name":"Segelfahrzeuge in Fahrt und Fahrzeuge unter Ruder","teil":"C","abschnitt":null,"text":[[1,"a)","Ein Segelfahrzeug in Fahrt muss führen"],[2,"i)","Seitenlichter;"],[2,"ii)","ein Hecklicht."],[1,"b)","Auf einem Segelfahrzeug von weniger als 20 Meter Länge dürfen die unter Buchstabe a vorgeschriebenen Lichter in einer Dreifarbenlaterne vereinigt werden, die an oder nahe der Mastspitze dort angebracht ist, wo sie am besten gesehen werden kann."],[1,"c)","Ein Segelfahrzeug in Fahrt darf zusätzlich zu den unter Buchstabe a vorgeschriebenen Lichtern an oder nahe der Mastspitze zwei Rundumlichter senkrecht übereinander dort führen, wo sie am besten gesehen werden können, und zwar das obere rot und das untere grün; diese Lichter dürfen jedoch nicht zusammen mit der Dreifarbenlaterne nach Buchstabe b geführt werden."],[1,"d)",""],[2,"i)","Ein Segelfahrzeug von weniger als 7 Meter Länge muss, wenn möglich, die unter Buchstabe a oder b vorgeschriebenen Lichter führen; andernfalls muss eine elektrische Lampe oder eine angezündete Laterne mit einem weißen Licht gebrauchsfertig zur Hand gehalten und rechtzeitig gezeigt werden, um einen Zusammenstoß zu verhüten."],[2,"ii)","Ein Fahrzeug unter Ruder darf die in dieser Regel für Segelfahrzeuge vorgeschriebenen Lichter führen; andernfalls muss eine elektrische Lampe oder eine angezündete Laterne mit einem weißen Licht gebrauchsfertig zur Hand gehalten und rechtzeitig gezeigt werden, um einen Zusammenstoß zu verhüten."],[1,"e)","Ein Fahrzeug unter Segel, das gleichzeitig mit Maschinenkraft fährt, muss im Vorschiff einen Kegel - Spitze unten - dort führen, wo er am besten gesehen werden kann."]],"hinweisName":"Dreifarbenlaterne, auch Ruderboote","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r26","nr":26,"name":"Fischereifahrzeuge","teil":"C","abschnitt":null,"text":[[1,"a)","Ein fischendes Fahrzeug in Fahrt oder vor Anker darf nur die in dieser Regel vorgeschriebenen Lichter und Signalkörper führen."],[1,"b)","Ein fischender Trawler, das heißt ein Fahrzeug, das ein Schleppnetz oder ein anderes Fanggerät durchs Wasser schleppt, muss führen"],[2,"i)","zwei Rundumlichter senkrecht übereinander, das obere grün und das untere weiß, oder ein Stundenglas;"],[2,"ii)","ein Topplicht achterlicher und höher als das grüne Rundumlicht; ein Fahrzeug von weniger als 50 Meter Länge kann ein solches Licht führen, ist jedoch nicht dazu verpflichtet;"],[2,"iii)","bei Fahrt durchs Wasser zusätzlich zu den unter diesem Buchstaben vorgeschriebenen Lichtern Seitenlichter und ein Hecklicht."],[1,"c)","Ein fischendes Fahrzeug, das nicht trawlt, muss führen"],[2,"i)","zwei Rundumlichter senkrecht übereinander, das obere rot und das untere weiß, oder ein Stundenglas;"],[2,"ii)","bei ausgebrachtem Fanggerät, das waagerecht mehr als 150 Meter ins Wasser reicht, ein weißes Rundumlicht oder einen Kegel - Spitze oben - in Richtung des Fanggeräts;"],[2,"iii)","bei Fahrt durchs Wasser zusätzlich zu den unter diesem Buchstaben vorgeschriebenen Lichtern Seitenlichter und ein Hecklicht."],[1,"d)","Die zusätzlich zu diesen Regeln in Anlage II beschriebenen Signale gelten für ein fischendes Fahrzeug, das sich in nächster Nähe anderer fischender Fahrzeuge befindet."],[1,"e)","Ein nicht fischendes Fahrzeug darf die in dieser Regel vorgeschriebenen Lichter oder Signalkörper nicht führen, sondern nur die für ein Fahrzeug seiner Länge vorgeschriebenen."]],"hinweisName":"Trawler: grün über weiss","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r27","nr":27,"name":"Manövrierunfähige oder manövrierbehinderte Fahrzeuge","teil":"C","abschnitt":null,"text":[[1,"a)","Ein manövrierunfähiges Fahrzeug muss führen"],[2,"i)","zwei rote Rundumlichter senkrecht übereinander dort, wo sie am besten gesehen werden können;"],[2,"ii)","zwei Bälle oder ähnliche Signalkörper senkrecht übereinander dort, wo sie am besten gesehen werden können;"],[2,"iii)","bei Fahrt durchs Wasser zusätzlich zu den unter diesem Buchstaben vorgeschriebenen Lichtern Seitenlichter und ein Hecklicht."],[1,"b)","Ein manövrierbehindertes Fahrzeug, ausgenommen ein Fahrzeug beim Minenräumen, muss führen"],[2,"i)","drei Rundumlichter senkrecht übereinander dort, wo sie am besten gesehen werden können. Das obere und das untere Licht müssen rot, das mittlere muss weiß sein;"],[2,"ii)","drei Signalkörper senkrecht übereinander dort, wo sie am besten gesehen werden können. Der obere und der untere Signalkörper müssen Bälle, der mittlere muss ein Rhombus sein;"],[2,"iii)","bei Fahrt durchs Wasser zusätzlich zu den unter Ziffer i vorgeschriebenen Lichtern ein Topplicht oder mehrere Topplichter sowie Seitenlichter und ein Hecklicht;"],[2,"iv)","vor Anker zusätzlich zu den unter den Ziffern i und ii vorgeschriebenen Lichtern oder Signalkörpern das Licht, die Lichter oder den Signalkörper nach Regel 30."],[1,"c)","Ein schleppendes Maschinenfahrzeug muss während eines Schleppvorgangs, bei dem das schleppende Fahrzeug und sein Anhang erheblich behindert sind, vom Kurs abzuweichen, zusätzlich zu den in Regel 24 Buchstabe a vorgeschriebenen Lichtern oder Signalkörpern die unter Buchstabe b Ziffer i und ii dieser Regel vorgeschriebenen Lichter oder Signalkörper führen."],[1,"d)","Ein manövrierbehindertes Fahrzeug, das baggert oder Unterwasserarbeiten ausführt, muss die unter Buchstabe b Ziffern i, ii und iii vorgeschriebenen Lichter oder Signalkörper führen, bei Behinderung außerdem"],[2,"i)","zwei rote Rundumlichter oder zwei Bälle senkrecht übereinander, um die Seite anzuzeigen, an der die Behinderung besteht;"],[2,"ii)","zwei grüne Rundumlichter oder zwei Rhomben senkrecht übereinander, um die Passierseite für ein anderes Fahrzeug anzuzeigen;"],[2,"iii)","vor Anker an Stelle der Lichter oder des Signalkörpers nach Regel 30 die unter diesem Buchstaben vorgeschriebenen Lichter oder Signalkörper."],[1,"e)","Macht die Größe eines Fahrzeugs bei Taucherarbeiten es unmöglich, alle unter Buchstabe d vorgeschriebenen Lichter und Signalkörper zu führen, so sind zu führen"],[2,"i)","drei Rundumlichter, senkrecht übereinander dort, wo sie am besten gesehen werden können. Das obere und das untere Licht müssen rot, das mittlere muss weiß sein;"],[2,"ii)","die Flagge \"A\" des Internationalen Signalbuchs als Tafel von mindestens 1 Meter Höhe. Ihre Rundumsichtbarkeit muss sichergestellt sein."],[1,"f)","Ein Fahrzeug beim Minenräumen muss zusätzlich zu den in Regel 23 vorgeschriebenen Lichtern für Maschinenfahrzeuge oder zu den Lichtern oder dem Signalkörper nach Regel 30 für ein Fahrzeug vor Anker drei grüne Rundumlichter oder drei Bälle führen. Eines dieser Lichter oder einer dieser Signalkörper muss nahe dem Vormasttopp und eines oder einer an jedem Ende der vorderen Rah geführt werden. Diese Lichter oder Signalkörper zeigen an, dass es für andere Fahrzeuge gefährlich ist, sich dem Minenräumfahrzeug auf weniger als 1.000 Meter zu nähern."],[1,"g)","Fahrzeuge von weniger als 12 Meter Länge, mit Ausnahme solcher Fahrzeuge, die Taucherarbeiten durchführen, brauchen die in dieser Regel vorgeschriebenen Lichter und Signalkörper nicht zu führen."],[1,"h)","Die in dieser Regel vorgeschriebenen Signale sind keine Notsignale, durch die Hilfeleistung verlangt wird. Solche Signale sind in Anlage IV aufgeführt."]],"hinweisName":"Zwei rote Rundumlichter, Rot-Weiss-Rot","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r30","nr":30,"name":"Fahrzeuge vor Anker und auf Grund","teil":"C","abschnitt":null,"text":[[1,"a)","Ein Fahrzeug vor Anker muss dort, wo sie am besten gesehen werden können, führen"],[2,"i)","im vorderen Teil ein weißes Rundumlicht oder einen Ball;"],[2,"ii)","an oder nahe dem Heck ein weißes Rundumlicht niedriger als das Licht nach Ziffer i."],[1,"b)","Ein Fahrzeug vor Anker von weniger als 50 Meter Länge darf an Stelle der unter Buchstabe a vorgeschriebenen Lichter ein weißes Rundumlicht dort führen, wo es am besten gesehen werden kann."],[1,"c)","Ein Fahrzeug vor Anker darf auch die vorhandenen Deckslichter oder gleichwertige Lichter zur Beleuchtung der Decks einschalten; ist das Fahrzeug 100 und mehr Meter lang, so ist es dazu verpflichtet."],[1,"d)","Ein Fahrzeug auf Grund muss die unter Buchstabe a oder b vorgeschriebenen Lichter führen und zusätzlich dort, wo sie am besten gesehen werden können,"],[2,"i)","zwei rote Rundumlichter senkrecht übereinander;"],[2,"ii)","drei Bälle senkrecht übereinander."],[1,"e)","Ein Fahrzeug von weniger als 7 Meter Länge vor Anker, das sich nicht in einem engen Fahrwasser, einer Fahrrinne oder auf einer Reede oder in der Nähe davon oder dort befindet, wo andere Fahrzeuge in der Regel fahren, braucht nicht die unter den Buchstaben a und b vorgeschriebenen Lichter oder den dort vorgeschriebenen Signalkörper zu führen."],[1,"f)","Ein Fahrzeug von weniger als 12 Meter Länge auf Grund braucht nicht die unter Buchstabe d Ziffern i und ii vorgeschriebenen Lichter oder Signalkörper zu führen."]],"hinweisName":"Ein Ball vorn, Glocke läuten","hinweisNr":"Regelnummer zwischen 20 und 31"},{"id":"r35","nr":35,"name":"Schallsignale bei verminderter Sicht","teil":"D","abschnitt":null,"text":[[0,"","Innerhalb oder in der Nähe eines Gebiets mit verminderter Sicht müssen am Tag oder bei Nacht folgende Signale gegeben werden:"],[1,"a)","Ein Maschinenfahrzeug, das Fahrt durchs Wasser macht, muss mindestens alle 2 Minuten einen langen Ton geben."],[1,"b)","Ein Maschinenfahrzeug in Fahrt, das seine Maschine gestoppt hat und keine Fahrt durchs Wasser macht, muss mindestens alle 2 Minuten zwei aufeinander folgende lange Töne mit einem Zwischenraum von etwa 2 Sekunden geben."],[1,"c)","Ein manövrierunfähiges Fahrzeug, ein manövrierbehindertes Fahrzeug, ein Tiefgang behindertes Fahrzeug, ein Segelfahrzeug, ein fischendes Fahrzeug und ein Fahrzeug, das ein anderes Fahrzeug schleppt oder schiebt, muss an Stelle der unter Buchstabe a oder b vorgeschriebenen Signale mindestens alle 2 Minuten drei aufeinander folgende Töne - lang, kurz, kurz - geben."],[1,"d)","Ein fischendes Fahrzeug vor Anker und ein manövrierbehindertes Fahrzeug, das bei der Ausführung seiner Arbeiten vor Anker liegt, müssen an Stelle der unter Buchstabe g vorgeschriebenen Signale das unter Buchstabe c vorgeschriebene Signal geben."],[1,"e)","Ein geschlepptes Fahrzeug oder das letzte Fahrzeug eines Schleppzugs muss, wenn bemannt, mindestens alle 2 Minuten vier aufeinander folgende Töne - lang, kurz, kurz, kurz - geben. Dieses Signal muss möglichst unmittelbar nach dem Signal des schleppenden Fahrzeugs gegeben werden."],[1,"f)","Sind ein schiebendes und ein geschobenes Fahrzeug miteinander zu einer zusammengesetzten Einheit starr verbunden, so gelten sie als ein Maschinenfahrzeug und müssen die unter Buchstabe a oder b vorgeschriebenen Signale geben."],[1,"g)","Ein Fahrzeug vor Anker muss mindestens jede Minute etwa 5 Sekunden lang die Glocke rasch läuten. Ein Fahrzeug von 100 und mehr Meter Länge muss die Glocke auf dem Vorschiff läuten und unmittelbar danach auf dem Achterschiff etwa 5 Sekunden lang den Gong rasch schlagen. Ein Fahrzeug vor Anker darf außerdem drei aufeinander folgende Töne - kurz, lang, kurz - geben, um einem sich nähernden Fahrzeug seinen Standort anzuzeigen und es vor einem möglichen Zusammenstoß zu warnen."],[1,"h)","Ein Fahrzeug auf Grund muss das Glockensignal und, soweit vorgeschrieben, das Gongsignal nach Buchstabe g geben, sowie zusätzlich unmittelbar vor und nach dem raschen Glockenläuten drei scharf voneinander getrennte Glockenschläge. Ein Fahrzeug auf Grund darf zusätzlich ein geeignetes Pfeifensignal geben."],[1,"i)","Ein Fahrzeug mit einer Länge von 12 und mehr, aber weniger als 20 Meter muss die unter den Buchstaben g und h vorgeschriebenen Glockensignale nicht geben. Es muss dann allerdings mindestens alle 2 Minuten ein anderes kräftiges Schallsignal geben."],[1,"j)","Ein Fahrzeug von weniger als 12 Meter Länge braucht die oben erwähnten Signale nicht zu geben, muss dann aber mindestens alle 2 Minuten ein anderes kräftiges Schallsignal geben."],[1,"k)","Ein Lotsenfahrzeug im Lotsdienst darf zusätzlich zu den unter Buchstabe a, b oder g vorgeschriebenen Signalen ein Erkennungssignal von vier kurzen Tönen geben."]],"hinweisName":"Alle 2 Minuten ein langer Ton","hinweisNr":"Regelnummer zwischen 32 und 37"},{"id":"r36","nr":36,"name":"Aufmerksamkeitssignale","teil":"D","abschnitt":null,"text":[[0,"","Ist es erforderlich, die Aufmerksamkeit eines anderen Fahrzeugs zu erregen, so darf ein Fahrzeug Licht- oder Schallsignale geben, die nicht mit anderen Signalen nach diesen Regeln verwechselt werden können; es darf auch seinen Scheinwerfer auf die Gefahr richten, wenn es dadurch andere Fahrzeuge nicht verwirrt. Jedes Licht, das die Aufmerksamkeit eines anderen Fahrzeugs erregen soll, muss so beschaffen sein, dass es nicht mit einem Schifffahrtszeichen verwechselt werden kann. Für die Zwecke dieser Regel ist die Verwendung von hoher Lichtstärke bei unterbrochenen Lichtern oder Drehlichtern, zum Beispiel Lichter mit umlaufender Blendscharte, zu vermeiden."]],"hinweisName":"Scheinwerfer auf die Gefahr richten","hinweisNr":"Regelnummer zwischen 32 und 37"}]}</script>
+<script>
+/* ==========================================================================
+   KVR II
+   Teil 1: Bewertung der Eingaben (ohne DOM-Zugriff)
+   Teil 2: Ablauf der Runde und Oberfläche
+   ========================================================================== */
+"use strict";
+
+/* ---------------------------------------------------------------------------
+   Teil 1: Bewertung
+   --------------------------------------------------------------------------- */
+const Bewertung = (() => {
+  const VERNEINUNG = new Set(["nicht", "kein", "keine", "keinen", "keiner", "keinem", "keines", "nie", "niemals"]);
+
+  // Kleinschreibung, Umlaute falten, ß -> ss, übrige Akzente entfernen.
+  function falten(s) {
+    return String(s).toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+
+  // Text -> Abschnitte (getrennt an Satz- und Aufzählungsgrenzen) -> Wörter
+  function zerlegen(text) {
+    return falten(text)
+      .split(/[.!?;,\n\r•]+/)
+      .map((teil) => teil.replace(/[^a-z0-9]+/g, " ").trim())
+      .filter(Boolean)
+      .map((teil) => teil.split(" "));
+  }
+
+  function toleranz(n) {
+    if (n < 7) return 0;
+    if (n <= 9) return 1;
+    return 2;
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    if (!m) return n;
+    if (!n) return m;
+    let vor = new Array(n + 1);
+    for (let j = 0; j <= n; j++) vor[j] = j;
+    for (let i = 1; i <= m; i++) {
+      const akt = [i];
+      for (let j = 1; j <= n; j++) {
+        akt[j] = Math.min(vor[j] + 1, akt[j - 1] + 1, vor[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      vor = akt;
+    }
+    return vor[n];
+  }
+
+  // Kleinster Abstand zwischen Begriff p und einem Teilstück von w, das mit
+  // demselben Buchstaben beginnt wie p.
+  function teilAbstand(p, w, tol) {
+    if (w.includes(p)) return 0;
+    let best = Infinity;
+    for (let start = 0; start < w.length; start++) {
+      if (w[start] !== p[0]) continue;
+      const rest = w.slice(start);
+      let vor = new Array(rest.length + 1);
+      for (let j = 0; j <= rest.length; j++) vor[j] = j;
+      for (let i = 1; i <= p.length; i++) {
+        const akt = [i];
+        for (let j = 1; j <= rest.length; j++) {
+          akt[j] = Math.min(vor[j] + 1, akt[j - 1] + 1, vor[j - 1] + (p[i - 1] === rest[j - 1] ? 0 : 1));
+        }
+        vor = akt;
+      }
+      for (let j = Math.max(1, p.length - tol); j <= rest.length; j++) best = Math.min(best, vor[j]);
+      if (best === 0) break;
+    }
+    return best;
+  }
+
+  // Suchwort mit optionalem Steuerzeichen:
+  //   =wort ganzes Wort exakt · ^wort Wortanfang · ~wort ganzes Wort mit Toleranz
+  //   wort  unter 4 Zeichen exakt, 4 Zeichen Wortanfang, 5–6 Zeichen Wortteil,
+  //         ab 7 Zeichen Wortteil mit Tippfehler-Toleranz
+  function wortSpec(roh) {
+    const z = roh[0];
+    if (z === "=" || z === "^" || z === "~") return { art: z, s: falten(roh.slice(1)).replace(/[^a-z0-9]/g, "") };
+    return { art: "", s: falten(roh).replace(/[^a-z0-9]/g, "") };
+  }
+
+  function wortTrifft(spec, w) {
+    const s = spec.s;
+    switch (spec.art) {
+      case "=": return w === s;
+      case "^": return w.startsWith(s);
+      case "~": return levenshtein(w, s) <= Math.max(toleranz(s.length), s.length >= 5 ? 1 : 0);
+      default:
+        if (s.length < 4) return w === s;
+        if (s.length === 4) return w.startsWith(s);
+        if (s.length <= 6) return w.includes(s);
+        return teilAbstand(s, w, toleranz(s.length)) <= toleranz(s.length);
+    }
+  }
+
+  function trefferSpec(roh) {
+    const marke = /^[=^~]/.test(roh) ? roh[0] : "";
+    const rest = marke ? roh.slice(1) : roh;
+    const woerter = falten(rest).replace(/[^a-z0-9 ]+/g, " ").trim().split(/\s+/);
+    return woerter.map((w) => wortSpec(marke + w));
+  }
+
+  function istVerneint(toks, pos) {
+    const v1 = toks[pos - 1], v2 = toks[pos - 2];
+    if (v1 && VERNEINUNG.has(v1)) return true;
+    if (v2 && VERNEINUNG.has(v2) && v1 !== "nur") return true;
+    return false;
+  }
+
+  // Sucht einen Treffer (Wortfolge, bis zu zwei Wörter dazwischen) in einem Abschnitt.
+  function sucheInAbschnitt(specs, toks, verneinend) {
+    for (let i = 0; i < toks.length; i++) {
+      let pos = -1;
+      if (specs.length === 1) {
+        if (wortTrifft(specs[0], toks[i])) pos = i;
+        else if (!specs[0].art && specs[0].s.length >= 7 && i + 1 < toks.length &&
+                 wortTrifft(specs[0], toks[i] + toks[i + 1])) pos = i;
+      } else if (wortTrifft(specs[0], toks[i])) {
+        let k = i, ok = true;
+        for (let t = 1; t < specs.length; t++) {
+          let gefunden = -1;
+          for (let j = k + 1; j <= Math.min(toks.length - 1, k + 3); j++) {
+            if (wortTrifft(specs[t], toks[j])) { gefunden = j; break; }
+          }
+          if (gefunden < 0) { ok = false; break; }
+          k = gefunden;
+        }
+        if (ok) pos = i;
+      }
+      if (pos < 0) continue;
+      if (!verneinend && istVerneint(toks, pos)) continue;
+      return pos;
+    }
+    return -1;
+  }
+
+  function elementErkannt(el, abschnitte) {
+    for (const roh of el.treffer) {
+      const specs = trefferSpec(roh);
+      for (const toks of abschnitte) {
+        if (sucheInAbschnitt(specs, toks, !!el.verneinend) >= 0) return true;
+      }
+    }
+    return false;
+  }
+
+  /* ---------- Regelname ---------- */
+  const schluessel = (s) => falten(s).replace(/[^a-z0-9]/g, "");
+
+  function nameRichtig(eingabe, soll) {
+    const a = schluessel(eingabe), b = schluessel(soll);
+    if (!a) return false;
+    const tol = b.length <= 10 ? 1 : 2;
+    return levenshtein(a, b) <= tol;
+  }
+
+  /* ---------- Volltext (Regel 5 / 6) ---------- */
+  function woerter(text) {
+    return String(text).split(/\s+/).filter(Boolean)
+      .map((o) => ({ o, k: schluessel(o) }))
+      .filter((w) => w.k);
+  }
+  function gleich(a, b) {
+    if (a === b) return true;
+    if (a.length >= 6 && b.length >= 6) return levenshtein(a, b) <= 1;
+    return false;
+  }
+
+  // Wortweiser Vergleich über die längste gemeinsame Folge.
+  // quote = 2·gemeinsam / (Wörter soll + Wörter eingabe)
+  function textVergleich(soll, eingabe) {
+    const A = woerter(soll), B = woerter(eingabe);
+    const n = A.length, m = B.length;
+    const L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        L[i][j] = gleich(A[i].k, B[j].k) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+      }
+    }
+    const okA = new Array(n).fill(false), okB = new Array(m).fill(false);
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+      if (gleich(A[i].k, B[j].k) && L[i][j] === L[i + 1][j + 1] + 1) { okA[i] = okB[j] = true; i++; j++; }
+      else if (L[i + 1][j] >= L[i][j + 1]) i++;
+      else j++;
+    }
+    const gemeinsam = L[0][0];
+    const quote = n + m ? (2 * gemeinsam) / (n + m) : 0;
+    return {
+      quote,
+      ok: quote >= 0.9,
+      soll: A.map((w, x) => ({ o: w.o, ok: okA[x] })),
+      ist: B.map((w, x) => ({ o: w.o, ok: okB[x] })),
+    };
+  }
+
+  /* ---------- Stichpunkte (Regel 12) ---------- */
+  function feldBewerten(feld, eingabe) {
+    const abschnitte = zerlegen(eingabe || "");
+    const erkannt = feld.elemente.map((el) => elementErkannt(el, abschnitte));
+    return { ok: erkannt.every(Boolean), erkannt };
+  }
+
+  return { falten, schluessel, levenshtein, nameRichtig, textVergleich, feldBewerten };
+})();
+
+/* ---------------------------------------------------------------------------
+   Teil 2: Ablauf und Oberfläche
+   --------------------------------------------------------------------------- */
+const DATEN = JSON.parse(document.getElementById("kvr-daten").textContent);
+const REGELN = DATEN.regeln;
+const NACH_ID = Object.fromEntries(REGELN.map((r) => [r.id, r]));
+const TEILE = DATEN.teile;
+const ABSCHNITTE = DATEN.abschnitte;
+
+// Regeln ausserhalb des Fragensets mit gleichem Namen (für Übung 2)
+const GLEICHNAMIG_EXTERN = { "Anwendung": [{ teil: "C", nr: 20 }, { teil: "F", nr: 40 }] };
+
+const MAX_WDH = 2;      // höchstens zwei Wiederholungen je Frage
+const ABSTAND = 3;      // frühestens nach drei anderen Fragen
+
+const ARTEN = [
+  { key: "1", titel: "Name eingeben", sub: "Teil und Nummer sind gegeben. Sie schreiben den Namen der Regel." },
+  { key: "2", titel: "Teil und Nummer bestimmen", sub: "Der Name ist gegeben. Sie wählen den Teil und tippen die Nummer ein." },
+  { key: "mix", titel: "Gemischt", sub: "Beide Übungsarten zufällig abwechselnd." },
+];
+const BEREICHE = [
+  { key: "A", tag: "A", titel: "Allgemeines", sub: "Regeln 1–3" },
+  { key: "B", tag: "B", titel: "Ausweich- und Fahrregeln", sub: "Regeln 4–19" },
+  { key: "C", tag: "C", titel: "Lichter und Signalkörper", sub: "Auswahl 23–27, 30" },
+  { key: "D", tag: "D", titel: "Schall- und Lichtsignale", sub: "Auswahl 35, 36" },
+  { key: "alle", tag: "", titel: "Alle gemischt", sub: "Teile A–D" },
+];
+const ANZAHLEN = [10, 15, 20, 25, "alle"];
+
+const $ = (id) => document.getElementById(id);
+const IST_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const MIT_TASTATUR = () => window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+/* ---------- Speicher mit Ersatz, falls blockiert ---------- */
+const speicher = (() => {
+  const ersatz = {};
+  return {
+    lesen(k) { try { return localStorage.getItem(k); } catch { return ersatz[k] ?? null; } },
+    schreiben(k, v) { try { localStorage.setItem(k, v); } catch { ersatz[k] = v; } },
+  };
+})();
+
+const einst = (() => {
+  const std = { art: "1", bereich: "alle", anzahl: 10 };
+  try {
+    const g = JSON.parse(speicher.lesen("kvr2.einstellungen") || "{}");
+    if (ARTEN.some((a) => a.key === g.art)) std.art = g.art;
+    if (BEREICHE.some((b) => b.key === g.bereich)) std.bereich = g.bereich;
+    if (ANZAHLEN.includes(g.anzahl)) std.anzahl = g.anzahl;
+  } catch { /* Standard behalten */ }
+  return std;
+})();
+function einstSichern() { speicher.schreiben("kvr2.einstellungen", JSON.stringify(einst)); }
+
+function pool(bereich) {
+  return REGELN.filter((r) => bereich === "alle" || r.teil === bereich).map((r) => r.id);
+}
+function anzahlMoeglich(n, bereich) {
+  return n === "alle" || n < pool(bereich).length;
+}
+
+/* ---------- Hilfen ---------- */
+function mischen(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function el(tag, klasse, text) {
+  const e = document.createElement(tag);
+  if (klasse) e.className = klasse;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+function teilText(t) { return `Teil ${t} – ${TEILE[t]}`; }
+function abschnittText(a) { return `Abschnitt ${a} – ${ABSCHNITTE[a]}`; }
+function ersteWoerter(text, n) { return text.split(/\s+/).slice(0, n).join(" "); }
+
+// Alle gültigen Kombinationen Teil/Nummer für einen Regelnamen
+function gueltigeStellen(regel) {
+  const intern = REGELN.filter((r) => r.name === regel.name).map((r) => ({ teil: r.teil, nr: r.nr }));
+  return [...intern, ...(GLEICHNAMIG_EXTERN[regel.name] || [])];
+}
+
+/* ---------- Zustand ---------- */
+let runde = null;
+let aktuell = null;   // { id, typ, hinweis, ergebnis, ausgang, abgeschlossen, ueberstimmt }
+let vorListe = "start";
+
+function rundeStarten(ids) {
+  const auswahl = mischen(ids);
+  runde = {
+    ids: auswahl,
+    queue: auswahl.slice(),
+    gezeigt: 0,
+    vorzeitig: false,
+    art: einst.art,
+    st: Object.fromEntries(auswahl.map((id) => [id, {
+      wdh: 0, erst: null, erstHinweis: false, final: null, letzteAntwort: "", versuche: 0, typ: null,
+    }])),
+  };
+  zeige("frage");
+  naechsteFrage();
+}
+
+function naechsteFrage() {
+  if (!runde.queue.length) return ergebnisZeigen();
+  const id = runde.queue.shift();
+  const s = runde.st[id];
+  if (s.versuche === 0) runde.gezeigt++;
+  // Übungsart einmal festlegen; Wiederholungen behalten sie
+  if (!s.typ) s.typ = runde.art === "mix" ? (Math.random() < 0.5 ? "1" : "2") : runde.art;
+  aktuell = { id, typ: s.typ, hinweis: false, ergebnis: null, ausgang: null, abgeschlossen: false, ueberstimmt: false };
+  frageRendern();
+}
+
+function erledigt() {
+  return runde.ids.filter((id) => runde.st[id].final !== null).length;
+}
+
+// Ausgang verbuchen: richtig | falsch | geloest | uebersprungen
+function verbuchen(ausgang) {
+  const s = runde.st[aktuell.id];
+  s.versuche++;
+  if (s.erst === null) { s.erst = ausgang; s.erstHinweis = aktuell.hinweis; }
+  if (ausgang === "richtig") { s.final = "richtig"; return "fertig"; }
+  if (s.wdh < MAX_WDH) {
+    s.wdh++;
+    runde.queue.splice(Math.min(ABSTAND, runde.queue.length), 0, aktuell.id);
+    return "wieder";
+  }
+  s.final = "offen";
+  return "offen";
+}
+function kommtWieder() { return runde.st[aktuell.id].wdh < MAX_WDH; }
+
+/* ---------- Ansichten ---------- */
+const SCREENS = ["start", "frage", "ergebnis", "liste"];
+let screenJetzt = "start";
+
+function zeige(name) {
+  screenJetzt = name;
+  for (const s of SCREENS) $("screen-" + s).hidden = s !== name;
+  $("btn-zurueck").hidden = name === "start";
+  $("btn-liste").hidden = name === "liste" || name === "frage";
+  if (name === "start") $("crumb").textContent = "Kollisionsverhütungsregeln";
+  if (name === "liste") $("crumb").textContent = "Alle Regeln";
+  if (name === "ergebnis") $("crumb").textContent = "Ergebnis";
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Start ---------- */
+function auswahlGruppe(box, eintraege, aktiv, gesperrt, beiWahl) {
+  box.innerHTML = "";
+  for (const e of eintraege) {
+    const b = el("button", "choice" + (e.span ? " span2" : ""));
+    b.type = "button";
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", String(e.key === aktiv));
+    b.tabIndex = e.key === aktiv ? 0 : -1;
+    if (gesperrt(e.key)) b.setAttribute("aria-disabled", "true");
+    const t = el("span", "choice-title");
+    if (e.tag) t.appendChild(el("span", "choice-tag", e.tag));
+    t.appendChild(document.createTextNode(e.titel));
+    b.appendChild(t);
+    if (e.sub) b.appendChild(el("span", "choice-sub", e.sub));
+    if (e.label) b.setAttribute("aria-label", e.label);
+    b.dataset.key = String(e.key);
+    b.addEventListener("click", () => { if (!gesperrt(e.key)) beiWahl(e.key, true); });
+    box.appendChild(b);
+  }
+  box.onkeydown = (ev) => {
+    const vor = ["ArrowRight", "ArrowDown"].includes(ev.key), zur = ["ArrowLeft", "ArrowUp"].includes(ev.key);
+    if (!vor && !zur) return;
+    ev.preventDefault();
+    const keys = eintraege.map((e) => e.key).filter((k) => !gesperrt(k));
+    const i = keys.indexOf(aktiv);
+    const n = keys[(i + (vor ? 1 : -1) + keys.length) % keys.length];
+    beiWahl(n, true);
+  };
+}
+
+function startRendern(fokusGruppe) {
+  if (!anzahlMoeglich(einst.anzahl, einst.bereich)) einst.anzahl = "alle";
+
+  auswahlGruppe($("art-choices"), ARTEN, einst.art, () => false, (k) => {
+    einst.art = k; einstSichern(); startRendern("art-choices");
+  });
+  auswahlGruppe($("bereich-choices"),
+    BEREICHE.map((b) => ({ ...b, sub: `${b.sub} · ${pool(b.key).length} Fragen`, span: b.key === "alle",
+      label: (b.tag ? `Teil ${b.tag}, ` : "") + `${b.titel}, ${b.sub}, ${pool(b.key).length} Fragen` })),
+    einst.bereich, () => false, (k) => { einst.bereich = k; einstSichern(); startRendern("bereich-choices"); });
+  const n = pool(einst.bereich).length;
+  auswahlGruppe($("anzahl-choices"),
+    ANZAHLEN.map((a) => ({ key: a, titel: a === "alle" ? "Alle" : String(a), sub: a === "alle" ? String(n) : "Fragen",
+      label: a === "alle" ? `Alle ${n} Fragen` : `${a} Fragen` })),
+    einst.anzahl, (k) => !anzahlMoeglich(k, einst.bereich),
+    (k) => { einst.anzahl = k; einstSichern(); startRendern("anzahl-choices"); });
+
+  if (fokusGruppe) {
+    const b = $(fokusGruppe).querySelector('[aria-checked="true"]');
+    if (b) b.focus();
+  }
+}
+
+function rundeAusEinstellungen() {
+  const ids = mischen(pool(einst.bereich));
+  const n = einst.anzahl === "alle" ? ids.length : Math.min(einst.anzahl, ids.length);
+  rundeStarten(ids.slice(0, n));
+}
+
+/* ---------- Frage ---------- */
+const TEIL_OPTIONEN = Object.keys(TEILE);
+
+function feldLabel(text, fuer, marke) {
+  const l = el("label", "feld-label");
+  l.htmlFor = fuer;
+  if (marke) l.appendChild(el("span", "mono", marke));
+  l.appendChild(document.createTextNode(text));
+  return l;
+}
+
+function frageRendern() {
+  const r = NACH_ID[aktuell.id];
+  const s = runde.st[aktuell.id];
+  const n = runde.ids.length;
+  const artText = aktuell.typ === "1" ? "Name gesucht" : "Teil und Nummer gesucht";
+  $("frage-label").innerHTML = s.versuche === 0
+    ? `Frage ${runde.gezeigt} von ${n} · ${artText}`
+    : `<span class="wdh">Wiederholung ${s.wdh} von ${MAX_WDH}</span> · ${artText}`;
+  const anteil = Math.round((erledigt() / n) * 100);
+  $("meter-fill").style.width = anteil + "%";
+  $("meter").setAttribute("aria-valuenow", String(anteil));
+  $("crumb").textContent = `${erledigt()} von ${n} erledigt`;
+
+  // Fragekopf
+  const kopf = $("frage-kopf");
+  kopf.innerHTML = "";
+  if (aktuell.typ === "1") {
+    const k = el("p", "q-kontext");
+    const t = el("span");
+    t.innerHTML = `<b>Teil ${r.teil}</b> – `;
+    t.appendChild(document.createTextNode(TEILE[r.teil]));
+    k.appendChild(t);
+    if (r.abschnitt) {
+      const a = el("span");
+      a.innerHTML = `<b>Abschnitt ${r.abschnitt}</b> – `;
+      a.appendChild(document.createTextNode(ABSCHNITTE[r.abschnitt]));
+      k.appendChild(a);
+    }
+    kopf.appendChild(k);
+    const h = el("h2", "q-name");
+    h.id = "frage-text";
+    h.tabIndex = -1;
+    h.innerHTML = `Regel <span class="mono">${r.nr}</span>`;
+    kopf.appendChild(h);
+    kopf.appendChild(el("p", "q-frage", "Wie heisst diese Regel?"));
+  } else {
+    const h = el("h2", "q-name", r.name);
+    h.id = "frage-text";
+    h.tabIndex = -1;
+    kopf.appendChild(h);
+    kopf.appendChild(el("p", "q-frage", "In welchem Teil steht diese Regel und welche Nummer hat sie?"));
+  }
+  const zusatz = r.volltext || r.stichpunkte;
+  if (zusatz) kopf.appendChild(el("p", "auftrag", zusatz.auftrag));
+
+  // Eingabefelder
+  const felder = $("antwort-felder");
+  felder.innerHTML = "";
+  if (aktuell.typ === "1") {
+    felder.appendChild(feldLabel("Name der Regel", "in-name"));
+    const i = el("input", "feld");
+    i.id = "in-name";
+    i.type = "text";
+    i.placeholder = "z. B. Kreuzende Kurse";
+    i.autocapitalize = "sentences";
+    i.spellcheck = false;
+    felder.appendChild(i);
+  } else {
+    const links = el("div"), rechts = el("div");
+    links.appendChild(feldLabel("Teil", "in-teil"));
+    const sel = el("select", "feld");
+    sel.id = "in-teil";
+    const leer = el("option", null, "Teil wählen …");
+    leer.value = "";
+    sel.appendChild(leer);
+    for (const t of TEIL_OPTIONEN) {
+      const o = el("option", null, teilText(t));
+      o.value = t;
+      sel.appendChild(o);
+    }
+    links.appendChild(sel);
+    rechts.appendChild(feldLabel("Nummer", "in-nr"));
+    const nr = el("input", "feld nr");
+    nr.id = "in-nr";
+    nr.type = "text";
+    nr.inputMode = "numeric";
+    nr.pattern = "[0-9]*";
+    nr.maxLength = 2;
+    nr.placeholder = "–";
+    rechts.appendChild(nr);
+    felder.append(links, rechts);
+  }
+  if (r.volltext) {
+    felder.appendChild(feldLabel(r.volltext.art === "ganz" ? "Regeltext" : "Erster Absatz", "in-text"));
+    const ta = el("textarea", "feld");
+    ta.id = "in-text";
+    ta.rows = 5;
+    ta.placeholder = "Jedes Fahrzeug …";
+    ta.spellcheck = true;
+    felder.appendChild(ta);
+  }
+  if (r.stichpunkte) {
+    r.stichpunkte.felder.forEach((f, x) => {
+      felder.appendChild(feldLabel(x === 0 ? "Wann gilt die Regel?" : "Stichworte", "in-sp" + x, f.feld));
+      const ta = el("textarea", "feld kurz");
+      ta.id = "in-sp" + x;
+      ta.rows = 2;
+      felder.appendChild(ta);
+    });
+  }
+
+  $("kbd-hint").hidden = !MIT_TASTATUR();
+  $("kbd-hint").textContent = (IST_MAC ? "Cmd" : "Strg") + " + Enter prüft";
+  $("hinweis-note").hidden = true;
+  $("btn-hinweis").disabled = false;
+  $("frage-aktionen").hidden = false;
+  $("auswertung").hidden = true;
+  pruefKnopf();
+
+  const erstesFeld = felder.querySelector("input, select, textarea");
+  if (MIT_TASTATUR() && erstesFeld) erstesFeld.focus({ preventScroll: true });
+  else $("frage-text").focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+function wert(id) { const e = $(id); return e ? e.value.trim() : ""; }
+
+function eingabeVollstaendig() {
+  if (aktuell.typ === "1") return !!wert("in-name");
+  return !!wert("in-teil") && !!wert("in-nr");
+}
+function pruefKnopf() { $("btn-pruefen").disabled = !eingabeVollstaendig(); }
+
+function hinweisZeigen() {
+  const r = NACH_ID[aktuell.id];
+  aktuell.hinweis = true;
+  const teile = [aktuell.typ === "1" ? r.hinweisName : r.hinweisNr];
+  if (r.volltext) teile.push(`Text beginnt mit „${ersteWoerter(r.volltext.soll, 3)} …“`);
+  if (r.stichpunkte) teile.push(...r.stichpunkte.felder.map((f) => `${f.feld} ${f.hinweis}`));
+  $("hinweis-text").textContent = teile.join("\n");
+  $("hinweis-note").hidden = false;
+  $("btn-hinweis").disabled = true;
+  const f = $("antwort-felder").querySelector("input, select, textarea");
+  if (f && MIT_TASTATUR()) f.focus({ preventScroll: true });
+}
+
+function antwortZusammenfassen() {
+  const z = [];
+  if (aktuell.typ === "1") z.push("Name: " + (wert("in-name") || "–"));
+  else z.push(`Teil: ${wert("in-teil") || "–"} · Nummer: ${wert("in-nr") || "–"}`);
+  if ($("in-text")) z.push("Text: " + (wert("in-text") || "–"));
+  if ($("in-sp0")) NACH_ID[aktuell.id].stichpunkte.felder.forEach((f, x) => z.push(`${f.feld} ${wert("in-sp" + x) || "–"}`));
+  return z.join("\n");
+}
+
+function bewerten() {
+  const r = NACH_ID[aktuell.id];
+  const punkte = [];
+  const e = { punkte, ok: true };
+  if (aktuell.typ === "1") {
+    const ok = Bewertung.nameRichtig(wert("in-name"), r.name);
+    punkte.push({ label: "Name", ok, feld: "in-name" });
+  } else {
+    const teil = wert("in-teil");
+    const nr = parseInt(wert("in-nr"), 10);
+    const stellen = gueltigeStellen(r);
+    const exakt = stellen.some((g) => g.teil === teil && g.nr === nr);
+    const teilOk = exakt || stellen.some((g) => g.teil === teil);
+    // Nummer passt nur, wenn sie zum gewählten Teil gehört oder der Teil ohnehin falsch ist
+    const nrOk = exakt || (!teilOk && stellen.some((g) => g.nr === nr));
+    punkte.push({ label: "Teil", ok: teilOk, feld: "in-teil" });
+    punkte.push({ label: "Nummer", ok: nrOk, feld: "in-nr" });
+  }
+  if (r.volltext) {
+    const v = Bewertung.textVergleich(r.volltext.soll, wert("in-text"));
+    e.text = v;
+    punkte.push({ label: `Text ${Math.round(v.quote * 100)} %`, ok: v.ok, feld: "in-text" });
+  }
+  if (r.stichpunkte) {
+    e.felder = r.stichpunkte.felder.map((f, x) => {
+      const b = Bewertung.feldBewerten(f, wert("in-sp" + x));
+      punkte.push({ label: f.feld, ok: b.ok, feld: "in-sp" + x });
+      return b;
+    });
+  }
+  e.ok = punkte.every((p) => p.ok);
+  return e;
+}
+
+function pruefen() {
+  if (aktuell.abgeschlossen || !$("auswertung").hidden || !eingabeVollstaendig()) return;
+  aktuell.ergebnis = bewerten();
+  aktuell.ausgang = aktuell.ergebnis.ok ? "richtig" : "falsch";
+  runde.st[aktuell.id].letzteAntwort = antwortZusammenfassen();
+  auswertungZeigen();
+}
+
+function loesen() {
+  if (aktuell.abgeschlossen || !$("auswertung").hidden) return;
+  aktuell.ergebnis = null;
+  aktuell.ausgang = "geloest";
+  runde.st[aktuell.id].letzteAntwort = antwortZusammenfassen();
+  auswertungZeigen();
+}
+
+function ueberspringen() {
+  if (aktuell.abgeschlossen) return;
+  aktuell.abgeschlossen = true;
+  const wieder = kommtWieder();
+  verbuchen("uebersprungen");
+  toast(wieder ? "Übersprungen – kommt später nochmals" : "Übersprungen – bleibt offen");
+  naechsteFrage();
+}
+
+const KOPF = { richtig: "Richtig", falsch: "Falsch", geloest: "Lösung angezeigt" };
+const KLASSE = { richtig: "ok", falsch: "no", geloest: "skip" };
+
+function auswertungZeigen() {
+  const r = NACH_ID[aktuell.id];
+  const e = aktuell.ergebnis;
+
+  // Felder sperren und markieren
+  for (const f of $("antwort-felder").querySelectorAll("input, select, textarea")) {
+    if (f.tagName === "SELECT") f.disabled = true; else f.readOnly = true;
+    if (f.tagName === "TEXTAREA") { f.style.height = "auto"; f.style.height = (f.scrollHeight + 2) + "px"; }
+  }
+  if (e) for (const p of e.punkte) { const f = $(p.feld); if (f) f.classList.add(p.ok ? "ist-ok" : "ist-no"); }
+
+  $("kbd-hint").hidden = true;
+  $("frage-aktionen").hidden = true;
+  $("auswertung").hidden = false;
+
+  verdictSetzen();
+
+  // Prüfpunkte
+  const chips = $("pruef-chips");
+  chips.innerHTML = "";
+  $("pruefpunkte-wrap").hidden = !e;
+  if (e) {
+    for (const p of e.punkte) {
+      const c = el("span", "chip " + (p.ok ? "hit" : "no"));
+      c.innerHTML = `<i aria-hidden="true">${p.ok ? "✓" : "✗"}</i>`;
+      c.appendChild(document.createTextNode(p.label));
+      c.setAttribute("aria-label", `${p.label}: ${p.ok ? "richtig" : "falsch"}`);
+      chips.appendChild(c);
+    }
+  }
+
+  loesungRendern($("loesung-box"), r, e);
+  $("btn-weiter").textContent = runde.queue.length || (kommtWieder() && aktuell.ausgang !== "richtig") ? "Weiter" : "Zum Ergebnis";
+  $("verdict-head").focus({ preventScroll: true });
+  $("verdict").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+function verdictSetzen() {
+  const ausgang = aktuell.ausgang;
+  const e = aktuell.ergebnis;
+  $("verdict").className = "verdict " + KLASSE[ausgang];
+  $("verdict-head").textContent = KOPF[ausgang] + (ausgang === "richtig" && aktuell.hinweis ? " (mit Hinweis)" : "");
+  const sub = $("verdict-sub");
+  sub.textContent = "";
+  const wieder = kommtWieder();
+  if (aktuell.ueberstimmt) sub.textContent = "Von Ihnen als richtig gewertet.";
+  else if (ausgang === "richtig") sub.textContent = "Mit „i“ sehen Sie die ganze Regel.";
+  else if (e) {
+    const falsch = e.punkte.filter((p) => !p.ok).map((p) => p.label.replace(/ \d+ %$/, ""));
+    sub.innerHTML = `<b>Nicht richtig:</b> `;
+    sub.appendChild(document.createTextNode(falsch.join(", ") + "." + (wieder ? " Kommt später nochmals." : " Bleibt offen.")));
+  } else sub.textContent = wieder ? "Die Frage kommt später nochmals." : "Die Frage bleibt offen.";
+  $("btn-doch").hidden = !(e && ausgang === "falsch");
+}
+
+function dochRichtig() {
+  aktuell.ausgang = "richtig";
+  aktuell.ueberstimmt = true;
+  verdictSetzen();
+  $("btn-weiter").textContent = runde.queue.length ? "Weiter" : "Zum Ergebnis";
+  $("verdict-head").focus({ preventScroll: true });
+}
+
+function weiter() {
+  if (aktuell.abgeschlossen) return;
+  aktuell.abgeschlossen = true;
+  verbuchen(aktuell.ausgang);
+  naechsteFrage();
+}
+
+function zeile(box, html, textTeile) {
+  const p = el("p", "loes-zeile");
+  p.innerHTML = html;
+  if (textTeile) p.appendChild(document.createTextNode(textTeile));
+  box.appendChild(p);
+  return p;
+}
+
+function loesungRendern(box, r, e) {
+  box.innerHTML = "";
+  if (aktuell.typ === "1") {
+    const p = zeile(box, `<span class="mono">Regel ${r.nr}</span> · `);
+    p.appendChild(el("b", null, r.name));
+  } else {
+    const p = zeile(box, `<b>Teil ${r.teil}</b> – `);
+    p.appendChild(document.createTextNode(TEILE[r.teil] + ", "));
+    p.appendChild(el("b", null, `Regel ${r.nr}`));
+    const andere = gueltigeStellen(r).filter((g) => !(g.teil === r.teil && g.nr === r.nr));
+    if (andere.length) {
+      p.appendChild(el("small", null, `Ebenfalls „${r.name}“ und richtig: ` +
+        andere.map((g) => `Teil ${g.teil} Regel ${g.nr}`).join(", ") + "."));
+    }
+  }
+  if (r.abschnitt && aktuell.typ === "2") zeile(box, "", abschnittText(r.abschnitt));
+
+  if (r.volltext) {
+    const b = el("div", "loes-block");
+    b.appendChild(el("p", "eyebrow", r.volltext.art === "ganz" ? "Regeltext" : "Erster Absatz"));
+    const d = el("p", "diff");
+    if (e && e.text) {
+      e.text.soll.forEach((w, x) => {
+        if (x) d.appendChild(document.createTextNode(" "));
+        if (w.ok) d.appendChild(document.createTextNode(w.o));
+        else d.appendChild(el("span", "fehlt", w.o));
+      });
+      b.appendChild(d);
+      if (e.text.soll.some((w) => !w.ok) || e.text.ist.some((w) => !w.ok)) {
+        b.appendChild(el("p", "eyebrow sub-eyebrow", "Ihr Text"));
+        const d2 = el("p", "diff");
+        if (!e.text.ist.length) d2.appendChild(el("span", "fehlt", "Kein Text eingegeben"));
+        e.text.ist.forEach((w, x) => {
+          if (x) d2.appendChild(document.createTextNode(" "));
+          if (w.ok) d2.appendChild(document.createTextNode(w.o));
+          else d2.appendChild(el("span", "zuviel", w.o));
+        });
+        b.appendChild(d2);
+        b.appendChild(el("p", "diff-legende", "Wellenlinie: fehlt in Ihrem Text · Durchgestrichen: steht so nicht in der Regel"));
+      }
+    } else {
+      d.textContent = r.volltext.soll;
+      b.appendChild(d);
+    }
+    box.appendChild(b);
+  }
+
+  if (r.stichpunkte) {
+    const b = el("div", "loes-block");
+    b.appendChild(el("p", "eyebrow", "Regel 12 a"));
+    r.stichpunkte.felder.forEach((f, x) => {
+      const p = el("p", "rt " + (x ? "l2" : "l1"));
+      p.appendChild(el("span", "mk", f.feld));
+      const t = el("span", null, f.soll);
+      p.appendChild(t);
+      b.appendChild(p);
+      const chips = el("div", "chips");
+      chips.style.margin = "2px 0 10px " + (x ? "4.3em" : "2.7em");
+      f.elemente.forEach((elem, k) => {
+        const erkannt = e && e.felder ? e.felder[x].erkannt[k] : null;
+        const c = el("span", "chip" + (erkannt === null ? "" : erkannt ? " hit" : " fehlt"));
+        if (erkannt !== null) c.innerHTML = `<i aria-hidden="true">${erkannt ? "✓" : "·"}</i>`;
+        c.appendChild(document.createTextNode(elem.label));
+        chips.appendChild(c);
+      });
+      b.appendChild(chips);
+    });
+    box.appendChild(b);
+  }
+}
+
+/* ---------- Ergebnis ---------- */
+function ergebnisZeigen() {
+  zeige("ergebnis");
+  const gestellt = runde.ids.filter((id) => runde.st[id].erst !== null);
+  const n = gestellt.length;
+  const erstRichtig = gestellt.filter((id) => runde.st[id].erst === "richtig");
+  const mitHinweis = erstRichtig.filter((id) => runde.st[id].erstHinweis).length;
+  const spaeter = gestellt.filter((id) => runde.st[id].erst !== "richtig" && runde.st[id].final === "richtig");
+  const offen = gestellt.filter((id) => runde.st[id].final !== "richtig");
+
+  $("ergebnis-eyebrow").textContent = runde.vorzeitig
+    ? `Vorzeitig beendet · ${n} von ${runde.ids.length} Fragen gestellt`
+    : "Runde beendet";
+  $("ergebnis-score").textContent = n ? Math.round((erstRichtig.length / n) * 100) + " %" : "–";
+  $("ergebnis-zahl").textContent = `${erstRichtig.length}/${n}`;
+
+  const facts = $("ergebnis-facts");
+  facts.innerHTML = "";
+  const fakt = (zahl, text) => {
+    const s = el("span", "fact");
+    s.innerHTML = `<b>${zahl}</b>`;
+    s.appendChild(document.createTextNode(text));
+    facts.appendChild(s);
+  };
+  if (mitHinweis) fakt(mitHinweis, "davon mit Hinweis");
+  if (spaeter.length) fakt(spaeter.length, "nach Wiederholung gelöst");
+  if (offen.length) fakt(offen.length, "offen");
+  if (!spaeter.length && !offen.length && n) fakt(n, "alle beim ersten Mal");
+
+  const liste = $("misslist");
+  liste.innerHTML = "";
+  const nachzuarbeiten = [...offen, ...spaeter].sort((a, b) => NACH_ID[a].nr - NACH_ID[b].nr);
+  $("miss-eyebrow").hidden = !nachzuarbeiten.length;
+  for (const id of nachzuarbeiten) {
+    const r = NACH_ID[id];
+    const s = runde.st[id];
+    const b = el("button", "miss" + (s.final === "richtig" ? " later" : ""));
+    b.type = "button";
+    b.appendChild(el("b", null, String(r.nr)));
+    const span = el("span", null, r.name);
+    span.appendChild(el("small", null, `Teil ${r.teil}${r.abschnitt ? " · Abschnitt " + r.abschnitt : ""} · ` + (s.final === "richtig"
+      ? `nach ${s.versuche - 1}. Wiederholung gelöst`
+      : (s.final === "offen" ? `offen nach ${s.versuche} Versuchen` : "nicht abgeschlossen"))));
+    b.appendChild(span);
+    b.addEventListener("click", () => regelPanel(id, true));
+    liste.appendChild(b);
+  }
+  $("btn-fehler").hidden = !nachzuarbeiten.length;
+  $("btn-fehler").textContent = `Fehler nochmals üben (${nachzuarbeiten.length})`;
+  runde.fehler = nachzuarbeiten;
+}
+
+/* ---------- Alle Regeln ---------- */
+const SUCHTEXT = Object.fromEntries(REGELN.map((r) => [r.id,
+  Bewertung.falten(`regel ${r.nr} ${r.name} ${r.text.map((b) => b[2]).join(" ")}`)]));
+
+function listeRendern() {
+  const q = Bewertung.falten($("suche").value.trim());
+  const box = $("such-treffer");
+  box.innerHTML = "";
+  const treffer = REGELN.filter((r) => !q || SUCHTEXT[r.id].includes(q));
+  $("such-zahl").textContent = q ? `${treffer.length} von ${REGELN.length} Regeln` : `${REGELN.length} Regeln`;
+  let teil = null;
+  for (const r of treffer) {
+    if (r.teil !== teil) {
+      teil = r.teil;
+      const k = el("p", "teil-kopf", `Teil ${teil}`);
+      k.appendChild(el("span", null, TEILE[teil]));
+      box.appendChild(k);
+    }
+    const b = el("button", "such-zeile");
+    b.type = "button";
+    b.appendChild(el("b", null, String(r.nr)));
+    const s = el("span", null, r.name);
+    if (r.abschnitt) s.appendChild(el("small", null, abschnittText(r.abschnitt)));
+    b.appendChild(s);
+    b.addEventListener("click", () => regelPanel(r.id, false));
+    box.appendChild(b);
+  }
+}
+
+function listeOeffnen() {
+  if (screenJetzt === "frage") { toast("Während der Runde nicht verfügbar"); return; }
+  vorListe = screenJetzt === "liste" ? vorListe : screenJetzt;
+  zeige("liste");
+  listeRendern();
+}
+
+/* ---------- Panels ---------- */
+let letzterFokus = null;
+
+function panelOeffnen(id) {
+  letzterFokus = document.activeElement;
+  const p = $(id);
+  p.hidden = false;
+  const ziel = p.querySelector(".sheet-body button, .sheet-head .icon-btn") || p.querySelector("[data-schliessen]");
+  setTimeout(() => ziel && ziel.focus(), 30);
+}
+function panelSchliessen(p) {
+  p.hidden = true;
+  if (letzterFokus && document.contains(letzterFokus)) letzterFokus.focus({ preventScroll: true });
+}
+document.querySelectorAll(".sheet-wrap").forEach((p) => {
+  p.addEventListener("click", (e) => { if (e.target.closest("[data-schliessen]")) panelSchliessen(p); });
+});
+
+function regeltextRendern(box, r) {
+  const wrap = el("div", "regeltext");
+  let offeneMarke = "";
+  for (const [ebene, marke, text] of r.text) {
+    if (!text) { offeneMarke = marke; continue; }   // „f)“ ohne eigenen Text: mit erster Ziffer zusammen
+    const p = el("p", "rt l" + ebene + (ebene >= 1 && !marke ? " einzug" : ""));
+    if (marke) p.appendChild(el("span", "mk", offeneMarke ? `${offeneMarke} ${marke}` : marke));
+    if (offeneMarke && marke) p.classList.replace("l" + ebene, "l1");
+    offeneMarke = "";
+    p.appendChild(el("span", null, text));
+    wrap.appendChild(p);
+  }
+  box.appendChild(wrap);
+}
+
+function regelPanel(id, mitAntwort) {
+  const r = NACH_ID[id];
+  $("sheet-regel-nr").textContent = `Teil ${r.teil}${r.abschnitt ? " · Abschnitt " + r.abschnitt : ""} · Regel ${r.nr}`;
+  $("sheet-regel-titel").textContent = r.name;
+  const body = $("sheet-regel-body");
+  body.innerHTML = "";
+  const k = el("p", "rt-kontext", teilText(r.teil) + (r.abschnitt ? " · " + abschnittText(r.abschnitt) : ""));
+  body.appendChild(k);
+  if (mitAntwort && runde && runde.st[id]) {
+    body.appendChild(el("p", "eyebrow", "Ihre letzte Antwort"));
+    const t = runde.st[id].letzteAntwort;
+    body.appendChild(el("div", "eigene" + (t ? "" : " leer"), t || "Keine Antwort eingegeben"));
+    body.appendChild(el("p", "eyebrow", "Regeltext"));
+  }
+  const box = el("div", "loesung");
+  regeltextRendern(box, r);
+  body.appendChild(box);
+  panelOeffnen("sheet-regel");
+}
+
+/* ---------- Toast ---------- */
+let toastZeit = null;
+function toast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.hidden = false;
+  clearTimeout(toastZeit);
+  toastZeit = setTimeout(() => { t.hidden = true; }, 2200);
+}
+
+/* ---------- Ereignisse ---------- */
+$("btn-start").addEventListener("click", rundeAusEinstellungen);
+$("btn-liste").addEventListener("click", listeOeffnen);
+$("btn-liste-2").addEventListener("click", listeOeffnen);
+$("btn-info").addEventListener("click", () => panelOeffnen("sheet-info"));
+$("btn-info-2").addEventListener("click", () => panelOeffnen("sheet-info"));
+$("suche").addEventListener("input", listeRendern);
+
+$("antwort-felder").addEventListener("input", pruefKnopf);
+$("antwort-felder").addEventListener("change", pruefKnopf);
+$("antwort-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!$("auswertung").hidden) weiter(); else pruefen();
+});
+$("btn-pruefen").addEventListener("click", pruefen);
+$("btn-hinweis").addEventListener("click", hinweisZeigen);
+$("btn-loesen").addEventListener("click", loesen);
+$("btn-ueberspringen").addEventListener("click", ueberspringen);
+$("btn-doch").addEventListener("click", dochRichtig);
+$("btn-weiter").addEventListener("click", weiter);
+$("btn-i").addEventListener("click", () => regelPanel(aktuell.id, false));
+
+$("btn-fehler").addEventListener("click", () => rundeStarten(runde.fehler));
+$("btn-neu").addEventListener("click", rundeAusEinstellungen);
+$("btn-zum-start").addEventListener("click", () => { zeige("start"); startRendern(); });
+
+$("btn-zurueck").addEventListener("click", () => {
+  if (screenJetzt === "frage") return panelOeffnen("sheet-beenden");
+  if (screenJetzt === "liste" && vorListe === "ergebnis" && runde) return zeige("ergebnis");
+  zeige("start");
+  startRendern();
+});
+$("btn-beenden-ja").addEventListener("click", () => {
+  $("sheet-beenden").hidden = true;
+  runde.vorzeitig = runde.queue.length > 0 || !aktuell.abgeschlossen;
+  if (!aktuell.abgeschlossen && aktuell.ausgang) { aktuell.abgeschlossen = true; verbuchen(aktuell.ausgang); }
+  runde.queue = [];
+  ergebnisZeigen();
+});
+
+document.addEventListener("keydown", (e) => {
+  const offen = [...document.querySelectorAll(".sheet-wrap")].find((p) => !p.hidden);
+  if (e.key === "Escape" && offen) { panelSchliessen(offen); return; }
+  if (offen || screenJetzt !== "frage") return;
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    if (!$("auswertung").hidden) weiter(); else pruefen();
+  }
+});
+
+/* ---------- Offlinebetrieb ---------- */
+$("quelle-text").textContent = DATEN.quelle;
+function offlineStatus(text) { $("offline-status").textContent = text; }
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register("sw.js").then(() => {
+    offlineStatus("Offline verfügbar: Die App ist auf diesem Gerät gespeichert und startet auch ohne Netz.");
+  }).catch(() => offlineStatus("Offlinespeicher nicht verfügbar. Die App läuft, braucht aber beim Öffnen eine Verbindung."));
+} else {
+  offlineStatus("Offline-Installation ist nur über eine Webadresse (z. B. GitHub Pages) möglich, nicht beim Öffnen als Datei.");
+}
+
+/* ---------- Start ---------- */
+startRendern();
+window.__kvr2 = { Bewertung, REGELN };
+
+</script>
+</body>
+</html>
