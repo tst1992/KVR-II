@@ -64,6 +64,12 @@ dazu Regel 23, 24, 25, 26, 27, 30, 35 und 36.
 - **Regel 5 Ausguck**: vollständiger Regeltext.
 - **Regel 6 Sichere Geschwindigkeit**: erster Absatz („Jedes Fahrzeug … Bedingungen entspricht.“).
 - **Regel 12 Segelfahrzeuge**: Buchstabe a mit den Ziffern i, ii, iii in Stichworten.
+- **Regel 17 Maßnahmen des Kurshalters**: Prüfungsfrage „Erklären Sie den Begriff
+  Kurshalter und wie Sie sich verhalten, wenn ein anderes Fahrzeug seiner
+  Ausweichpflicht nicht nachkommt“. Fünf Felder in fester Reihenfolge:
+  Begriff, dann 1) Kurs und Geschwindigkeit beibehalten, 2) mindestens 5 kurze
+  Töne, 3) darf selbst manövrieren, 4) muss manövrieren, um den Zusammenstoß
+  zu vermeiden.
 
 ## Bewertung
 
@@ -73,12 +79,13 @@ dazu Regel 23, 24, 25, 26, 27, 30, 35 und 36.
 | Teil + Nummer          | beide stimmen. „Anwendung“: Regel 1, 4, 11 sowie 20 und 40 gelten alle                              |
 | Regeltext (Regel 5, 6) | Wortübereinstimmung ≥ 90 % (2 · gemeinsame Wörter / Wörter Soll + Eingabe), muß/muss gleich        |
 | Stichworte (Regel 12)  | je Ziffer alle Schlüsselbegriffe erkannt                                                           |
+| Stichworte (Regel 17)  | je Feld alle Schlüsselbegriffe erkannt; jedes Feld wird für sich geprüft, die Reihenfolge zählt    |
 
 Alle Teile einer Frage müssen stimmen. Mit „Doch richtig“ lässt sich die
 Automatik überstimmen.
 
 **Hinweis** zeigt einen kurzen Tipp (Übung 1: Stichwort aus der Regel,
-Übung 2: Nummernbereich, Regel 5/6: Textanfang, Regel 12: Tipp je Ziffer).
+Übung 2: Nummernbereich, Regel 5/6: Textanfang, Regel 12/17: Tipp je Feld).
 **Lösen** zeigt die Lösung. Nach jeder Antwort öffnet **i** die ganze Regel.
 
 **Wiederholung**: Falsch, gelöst oder übersprungen: Die Frage wird frühestens
@@ -94,7 +101,7 @@ mit diesen Regeln.
 index.html             Die ganze App: Stylesheet, Programm, Regeldaten (JSON-Block)
 manifest.webmanifest   Angaben für die Installation als App
 sw.js                  Offlinebetrieb
-icons/                 App-Symbole (192, 512, maskable, Apple)
+icons/                 App-Symbole (192, 512, maskable, Apple) und Vorlage icon.svg
 .nojekyll              GitHub soll die Dateien unverändert ausliefern
 ```
 
@@ -116,12 +123,14 @@ Die Regeln stehen in `index.html` im Block
 - **`text`**: Blöcke `[Ebene, Marke, Text]`. Ebene 0 = Absatz, 1 = Buchstabe
   (`a)`), 2 = Ziffer (`i)`). Ein Buchstabe ohne eigenen Text (`["f)", ""]`)
   wird mit der folgenden Ziffer zusammen angezeigt.
-- **`volltext`** (Regel 5, 6) und **`stichpunkte`** (Regel 12) steuern die
+- **`volltext`** (Regel 5, 6) und **`stichpunkte`** (Regel 12, 17) steuern die
   Sonderfälle. Bei `stichpunkte` hat jedes Feld `elemente` mit `treffer`
   (Wörter oder Wortfolgen; `^wort` = Wortanfang, `=wort` = ganzes Wort).
+  Freiwillig: `titel` (Überschrift der Lösung), je Feld `label`
+  (Beschriftung des Eingabefelds) und `ebene` (1 oder 2, Einzug in der Lösung).
 
-Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v1";`
-hochzählen (`v2`, `v3` …), damit installierte Apps die neue Fassung laden.
+Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v2";`
+hochzählen (`v3`, `v4` …), damit installierte Apps die neue Fassung laden.
 
 ## Datengrundlage
 

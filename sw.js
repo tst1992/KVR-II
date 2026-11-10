@@ -7,7 +7,7 @@
    (GitHub Pages) läuft.
    ========================================================================== */
 
-const BESTAND = "kvr2-v1";
+const BESTAND = "kvr2-v2";
 
 const DATEIEN = [
   "./",
