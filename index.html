@@ -414,6 +414,29 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
   .choices.grid2{grid-template-columns:1fr}
 }
 
+.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;margin-bottom:26px}
+.tile{aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:1px;background:var(--sea-850);border:1px solid var(--line-soft);border-radius:11px;color:var(--fog-dim);font-family:var(--mono);cursor:pointer;font-size:1.15rem;padding:0}
+.tile:hover{border-color:var(--line)}
+.tile b{font-weight:600;color:var(--white-light)}
+.tile small{font-size:.62rem;letter-spacing:.02em}
+.tile.good{border-color:var(--stbd);color:var(--stbd)}
+.tile.mid{border-color:var(--brass);color:var(--brass)}
+.tile.bad{border-color:var(--port);color:var(--port)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 22px;font-size:.76rem;color:var(--fog-dim)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .sw{width:11px;height:11px;border-radius:3px;border:1px solid var(--line)}
+.legend .sw.good{border-color:var(--stbd);background:rgba(60,194,140,.22)}
+.legend .sw.mid{border-color:var(--brass);background:rgba(216,165,68,.22)}
+.legend .sw.bad{border-color:var(--port);background:rgba(232,85,94,.22)}
+.part-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;gap:10px}
+.part-head h3{margin:0;font-size:.95rem;color:var(--white-light);font-weight:620}
+.part-head span{font-size:.78rem;color:var(--fog-dim);font-family:var(--mono)}
+.stand-zeile{font-size:.8rem;color:var(--fog-dim);margin:-14px 0 22px;font-family:var(--mono);line-height:1.6}
+.stand-zeile b{font-weight:600}
+.stand-zeile .g{color:var(--stbd)}.stand-zeile .r{color:var(--port)}
+.ghost.danger{margin-top:20px}
+.ghost.danger:hover{color:var(--port);border-color:var(--port)}
+.ghost.danger.scharf{color:var(--port);border-color:var(--port)}
 </style>
 </head>
 <body>
@@ -428,6 +451,9 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
       <span class="brand-name">KVR II</span>
       <span class="crumb" id="crumb">Kollisionsverhütungsregeln</span>
     </span>
+    <button class="icon-btn" id="btn-fortschritt" type="button" title="Fortschritt" aria-label="Fortschritt">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
+    </button>
     <button class="icon-btn" id="btn-liste" type="button" title="Alle Regeln" aria-label="Alle Regeln">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="18" r=".6"/></svg>
     </button>
@@ -445,6 +471,7 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
     <p class="eyebrow">Sportseeschifferschein · KVR</p>
     <h1 class="h-display">Regeln trainieren</h1>
     <p class="lede">Namen, Teile und Nummern der Kollisionsverhütungsregeln üben. Falsche Antworten kommen in derselben Runde nochmals.</p>
+    <p class="stand-zeile" id="stand-zeile" hidden></p>
 
     <p class="eyebrow" id="art-label">Übungsart</p>
     <div class="choices" id="art-choices" role="radiogroup" aria-labelledby="art-label"></div>
@@ -528,6 +555,25 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
   </section>
 
   <!-- ---------- Alle Regeln ---------- -->
+  <section class="screen" id="screen-fortschritt" hidden>
+    <p class="eyebrow">Lernstand</p>
+    <h2 class="h-section">Fortschritt</h2>
+    <p class="lede" id="fortschritt-lede"></p>
+    <div class="legend">
+      <span><i class="sw good"></i>sicher</span>
+      <span><i class="sw mid"></i>teilweise</span>
+      <span><i class="sw bad"></i>unsicher</span>
+      <span><i class="sw"></i>neu</span>
+    </div>
+    <div id="fortschritt-inhalt"></div>
+    <p class="eyebrow">Lernstand sichern</p>
+    <p class="lede">Der Lernstand liegt nur in diesem Browser. Zur Sicherung oder für ein anderes Gerät als Datei ausgeben und dort einlesen.</p>
+    <button class="ghost" id="btn-export" type="button">Lernstand ausgeben</button>
+    <button class="ghost" id="btn-import" type="button">Lernstand einlesen</button>
+    <input type="file" id="import-datei" accept="application/json,.json" hidden>
+    <button class="ghost danger" id="btn-reset" type="button">Lernstand löschen</button>
+  </section>
+
   <section class="screen" id="screen-liste" hidden>
     <p class="eyebrow">Ohne Abfrage</p>
     <h2 class="h-section">Alle Regeln</h2>
@@ -594,6 +640,10 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
       <p class="help-h">Wiederholung</p>
       <p>Falsch, gelöst oder übersprungen: Die Frage kommt nach frühestens drei anderen Fragen wieder, bis sie richtig beantwortet ist, höchstens zweimal. Danach bleibt sie offen und erscheint im Ergebnis.</p>
 
+      <p class="help-h">Lernstand und Auswahl</p>
+      <p>Die App merkt sich für jede Regel getrennt nach Übungsart (Name bzw. Teil und Nummer), wie oft und wann sie gefragt wurde, und die Ergebnisse der letzten fünf ersten Versuche. Es zählt nur der erste Versuch je Runde: richtig und „Doch richtig“ zählen, falsch, gelöst und übersprungen nicht.</p>
+      <p>Ist die Anzahl kleiner als der Bereich, wird gewichtet ausgewählt: Regeln, die lange nicht dran waren, kommen zuerst; häufig falsch beantwortete etwa dreimal so oft wie sichere. Keine Regel setzt länger als 3 × (Bereich ÷ Anzahl, aufgerundet) Runden aus. Bei „Gemischt“ wird pro Regel die schwächere oder länger nicht geübte Übungsart gestellt.</p>
+
       <p class="help-h">Tastatur</p>
       <p>Enter in einem einzeiligen Feld oder Strg + Enter (Mac: Cmd + Enter) prüft die Antwort und geht danach weiter.</p>
 
@@ -626,6 +676,24 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
       <p>Bisherige Antworten werden ausgewertet. Nicht gestellte Fragen zählen nicht mit.</p>
       <button class="cta" id="btn-beenden-ja" type="button">Beenden und auswerten</button>
       <button class="ghost" type="button" data-schliessen>Weiter üben</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="sheet-reset" hidden>
+  <div class="sheet-scrim" data-schliessen></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-reset-titel">
+    <button class="sheet-grab" type="button" data-schliessen aria-label="Schliessen"></button>
+    <div class="sheet-head">
+      <div>
+        <p class="plate-label">Lernstand</p>
+        <h3 class="h-section" id="sheet-reset-titel">Lernstand wirklich löschen?</h3>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <p>Alle gespeicherten Ergebnisse und Zählungen werden gelöscht. Das lässt sich nicht rückgängig machen. Danach werden alle Regeln wieder als neu behandelt.</p>
+      <button class="cta" type="button" data-schliessen>Abbrechen</button>
+      <button class="ghost danger scharf" id="btn-reset-ja" type="button">Ja, endgültig löschen</button>
     </div>
   </div>
 </div>
@@ -930,21 +998,94 @@ function gueltigeStellen(regel) {
   return [...intern, ...(GLEICHNAMIG_EXTERN[regel.name] || [])];
 }
 
+/* ---------- Lernstand ----------
+   Schlüssel je Regel und Übungsart: "r5:1" (Name), "r5:2" (Teil und Nummer).
+   n = Zahl der Runden, zuletzt = Rundennummer, verlauf = letzte fünf erste
+   Versuche (1 richtig, 0 sonst). */
+const LERN_KEY = "kvr2.lernstand";
+const VERLAUF_MAX = 5;
+const FEHLER_FAKTOR = 3;   // Gewicht 1 (sicher) bis 4 (immer falsch), ergibt in der Praxis etwa 3× so häufig
+const PUNKTE = { richtig: 1, falsch: 0, geloest: 0, uebersprungen: 0 };
+
+function lernstandLeer() { return { v: 1, runden: 0, fragen: {} }; }
+let lernstand = (() => {
+  try {
+    const d = JSON.parse(speicher.lesen(LERN_KEY));
+    if (d && d.v === 1 && d.fragen && typeof d.runden === "number") return d;
+  } catch {}
+  return lernstandLeer();
+})();
+function lernstandSpeichern() { speicher.schreiben(LERN_KEY, JSON.stringify(lernstand)); }
+
+const schl = (id, typ) => `${id}:${typ}`;
+function stand(k) { return lernstand.fragen[k] || { n: 0, zuletzt: null, verlauf: [] }; }
+function quote(k) {
+  const v = stand(k).verlauf;
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+}
+function klasse(k) {
+  const q = quote(k);
+  if (q === null) return "neu";
+  return q >= 0.8 ? "good" : q >= 0.4 ? "mid" : "bad";
+}
+function ersterVersuchVerbuchen(id, typ, ausgang) {
+  const k = schl(id, typ);
+  const s = lernstand.fragen[k] || (lernstand.fragen[k] = { n: 0, zuletzt: null, verlauf: [] });
+  s.n++;
+  s.zuletzt = runde.nr;
+  s.verlauf.push(PUNKTE[ausgang] ?? 0);
+  if (s.verlauf.length > VERLAUF_MAX) s.verlauf.shift();
+  lernstandSpeichern();
+}
+
+// Priorität = Runden seit dem letzten Stellen × Gewicht (1 bis 4).
+// Nie gestellte und überfällige kommen immer zuerst.
+function maxPause(pool, anzahl) { return 3 * Math.ceil(pool / anzahl); }
+function prioritaet(k, grenze) {
+  const s = stand(k);
+  if (s.zuletzt === null) return 1e9 + Math.random();
+  const pause = lernstand.runden + 1 - s.zuletzt;
+  if (pause >= grenze) return 1e6 + pause + Math.random();
+  const gewicht = 1 + FEHLER_FAKTOR * (1 - (quote(k) ?? 0));
+  return pause * gewicht * (0.9 + 0.2 * Math.random());
+}
+// Liefert { ids, typen }: bei "mix" je Regel die Übungsart mit höherer Priorität.
+function gewichteteAuswahl(ids, anzahl, art) {
+  const grenze = maxPause(ids.length, Math.min(anzahl, ids.length));
+  const typen = {};
+  const liste = ids.map((id) => {
+    if (art === "mix") {
+      const p1 = prioritaet(schl(id, "1"), grenze), p2 = prioritaet(schl(id, "2"), grenze);
+      typen[id] = p1 >= p2 ? "1" : "2";
+      return [id, Math.max(p1, p2)];
+    }
+    typen[id] = art;
+    return [id, prioritaet(schl(id, art), grenze)];
+  });
+  const gewaehlt = anzahl >= ids.length
+    ? ids
+    : liste.sort((a, b) => b[1] - a[1]).slice(0, anzahl).map(([id]) => id);
+  return { ids: gewaehlt, typen };
+}
+
 /* ---------- Zustand ---------- */
 let runde = null;
 let aktuell = null;   // { id, typ, hinweis, ergebnis, ausgang, abgeschlossen, ueberstimmt }
 let vorListe = "start";
 
-function rundeStarten(ids) {
+function rundeStarten(ids, typen = {}) {
   const auswahl = mischen(ids);
+  lernstand.runden++;
+  lernstandSpeichern();
   runde = {
+    nr: lernstand.runden,
     ids: auswahl,
     queue: auswahl.slice(),
     gezeigt: 0,
     vorzeitig: false,
     art: einst.art,
     st: Object.fromEntries(auswahl.map((id) => [id, {
-      wdh: 0, erst: null, erstHinweis: false, final: null, letzteAntwort: "", versuche: 0, typ: null,
+      wdh: 0, erst: null, erstHinweis: false, final: null, letzteAntwort: "", versuche: 0, typ: typen[id] || null,
     }])),
   };
   zeige("frage");
@@ -970,7 +1111,10 @@ function erledigt() {
 function verbuchen(ausgang) {
   const s = runde.st[aktuell.id];
   s.versuche++;
-  if (s.erst === null) { s.erst = ausgang; s.erstHinweis = aktuell.hinweis; }
+  if (s.erst === null) {
+    s.erst = ausgang; s.erstHinweis = aktuell.hinweis;
+    ersterVersuchVerbuchen(aktuell.id, aktuell.typ, ausgang);
+  }
   if (ausgang === "richtig") { s.final = "richtig"; return "fertig"; }
   if (s.wdh < MAX_WDH) {
     s.wdh++;
@@ -983,7 +1127,7 @@ function verbuchen(ausgang) {
 function kommtWieder() { return runde.st[aktuell.id].wdh < MAX_WDH; }
 
 /* ---------- Ansichten ---------- */
-const SCREENS = ["start", "frage", "ergebnis", "liste"];
+const SCREENS = ["start", "frage", "ergebnis", "liste", "fortschritt"];
 let screenJetzt = "start";
 
 function zeige(name) {
@@ -991,6 +1135,8 @@ function zeige(name) {
   for (const s of SCREENS) $("screen-" + s).hidden = s !== name;
   $("btn-zurueck").hidden = name === "start";
   $("btn-liste").hidden = name === "liste" || name === "frage";
+  $("btn-fortschritt").hidden = name === "fortschritt" || name === "frage";
+  if (name === "fortschritt") $("crumb").textContent = "Fortschritt";
   if (name === "start") $("crumb").textContent = "Kollisionsverhütungsregeln";
   if (name === "liste") $("crumb").textContent = "Alle Regeln";
   if (name === "ergebnis") $("crumb").textContent = "Ergebnis";
@@ -1028,7 +1174,19 @@ function auswahlGruppe(box, eintraege, aktiv, gesperrt, beiWahl) {
   };
 }
 
+function standZeileRendern() {
+  const zeile = (typ, titel) => {
+    const z = { good: 0, mid: 0, bad: 0, neu: 0 };
+    for (const r of REGELN) z[klasse(schl(r.id, typ))]++;
+    return { neu: z.neu, html: `${titel}: <b class="g">${z.good}</b> sicher · <b class="r">${z.bad + z.mid}</b> unsicher · <b>${z.neu}</b> neu` };
+  };
+  const a = zeile("1", "Name"), b = zeile("2", "Teil/Nr.");
+  const el2 = $("stand-zeile");
+  el2.hidden = a.neu + b.neu === 2 * REGELN.length;
+  el2.innerHTML = `${a.html}<br>${b.html}`;
+}
 function startRendern(fokusGruppe) {
+  standZeileRendern();
   if (!anzahlMoeglich(einst.anzahl, einst.bereich)) einst.anzahl = "alle";
 
   auswahlGruppe($("art-choices"), ARTEN, einst.art, () => false, (k) => {
@@ -1052,9 +1210,10 @@ function startRendern(fokusGruppe) {
 }
 
 function rundeAusEinstellungen() {
-  const ids = mischen(pool(einst.bereich));
+  const ids = pool(einst.bereich);
   const n = einst.anzahl === "alle" ? ids.length : Math.min(einst.anzahl, ids.length);
-  rundeStarten(ids.slice(0, n));
+  const w = gewichteteAuswahl(ids, n, einst.art);
+  rundeStarten(w.ids, w.typen);
 }
 
 /* ---------- Frage ---------- */
@@ -1513,6 +1672,64 @@ function listeOeffnen() {
   listeRendern();
 }
 
+/* ---------- Fortschritt ---------- */
+function fortschrittRendern() {
+  const box = $("fortschritt-inhalt");
+  box.innerHTML = "";
+  let bearbeitet = 0, sicher = 0;
+  for (const [typ, titel] of [["1", "Name eingeben"], ["2", "Teil und Nummer bestimmen"]]) {
+    const kopf = el("div", "part-head");
+    kopf.append(el("h3", null, titel),
+      el("span", null, `${REGELN.filter((r) => klasse(schl(r.id, typ)) !== "neu").length}/${REGELN.length}`));
+    const raster = el("div", "lgrid");
+    for (const r of REGELN) {
+      const k = schl(r.id, typ), s = stand(k), kl = klasse(k);
+      if (kl !== "neu") bearbeitet++;
+      if (kl === "good") sicher++;
+      const b = el("button", "tile" + (kl === "neu" ? "" : " " + kl));
+      b.type = "button";
+      b.append(el("b", null, String(r.nr)), el("small", null, kl === "neu" ? "neu" : Math.round(quote(k) * 100) + " %"));
+      b.title = `Regel ${r.nr} ${r.name}\n${s.n}× gefragt` + (kl === "neu" ? "" : `, letzte ${s.verlauf.length}: ${Math.round(quote(k) * 100)} % richtig`);
+      b.addEventListener("click", () => regelPanel(r.id, false));
+      raster.appendChild(b);
+    }
+    box.append(kopf, raster);
+  }
+  $("fortschritt-lede").textContent = bearbeitet
+    ? `${bearbeitet} von ${2 * REGELN.length} Abfragen bearbeitet (${REGELN.length} Regeln × 2 Übungsarten), davon ${sicher} sicher. ${lernstand.runden} ${lernstand.runden === 1 ? "Runde" : "Runden"} gespielt. Die Prozentzahl bezieht sich auf die letzten fünf ersten Versuche.`
+    : "Noch keine Regel geübt.";
+}
+function fortschrittOeffnen() {
+  if (screenJetzt === "frage") { toast("Während der Runde nicht verfügbar"); return; }
+  vorListe = screenJetzt === "fortschritt" || screenJetzt === "liste" ? vorListe : screenJetzt;
+  zeige("fortschritt");
+  fortschrittRendern();
+}
+function lernstandAusgeben() {
+  const blob = new Blob([JSON.stringify(lernstand, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `kvr2-lernstand-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast("Lernstand ausgegeben");
+}
+function lernstandEinlesen(datei) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || d.v !== 1 || typeof d.runden !== "number" || typeof d.fragen !== "object") throw 0;
+      lernstand = d;
+      lernstandSpeichern();
+      fortschrittRendern();
+      toast("Lernstand eingelesen");
+    } catch { toast("Die Datei enthält keinen gültigen Lernstand"); }
+  };
+  r.readAsText(datei);
+}
+
 /* ---------- Panels ---------- */
 let letzterFokus = null;
 
@@ -1578,6 +1795,22 @@ function toast(text) {
 
 /* ---------- Ereignisse ---------- */
 $("btn-start").addEventListener("click", rundeAusEinstellungen);
+$("btn-fortschritt").addEventListener("click", fortschrittOeffnen);
+$("btn-export").addEventListener("click", lernstandAusgeben);
+$("btn-import").addEventListener("click", () => $("import-datei").click());
+$("import-datei").addEventListener("change", (e) => {
+  const d = e.target.files && e.target.files[0];
+  if (d) lernstandEinlesen(d);
+  e.target.value = "";
+});
+$("btn-reset").addEventListener("click", () => panelOeffnen("sheet-reset"));
+$("btn-reset-ja").addEventListener("click", () => {
+  lernstand = lernstandLeer();
+  lernstandSpeichern();
+  $("sheet-reset").hidden = true;
+  fortschrittRendern();
+  toast("Lernstand gelöscht");
+});
 $("btn-liste").addEventListener("click", listeOeffnen);
 $("btn-liste-2").addEventListener("click", listeOeffnen);
 $("btn-info").addEventListener("click", () => panelOeffnen("sheet-info"));
@@ -1598,13 +1831,16 @@ $("btn-doch").addEventListener("click", dochRichtig);
 $("btn-weiter").addEventListener("click", weiter);
 $("btn-i").addEventListener("click", () => regelPanel(aktuell.id, false));
 
-$("btn-fehler").addEventListener("click", () => rundeStarten(runde.fehler));
+// Fehler nochmals: gleiche Übungsart wie beim Fehlversuch
+$("btn-fehler").addEventListener("click", () => rundeStarten(runde.fehler,
+  Object.fromEntries(runde.fehler.map((id) => [id, runde.st[id].typ]))));
 $("btn-neu").addEventListener("click", rundeAusEinstellungen);
 $("btn-zum-start").addEventListener("click", () => { zeige("start"); startRendern(); });
 
 $("btn-zurueck").addEventListener("click", () => {
   if (screenJetzt === "frage") return panelOeffnen("sheet-beenden");
-  if (screenJetzt === "liste" && vorListe === "ergebnis" && runde) return zeige("ergebnis");
+  if (screenJetzt === "liste" && vorListe === "fortschritt") { zeige("fortschritt"); return fortschrittRendern(); }
+  if ((screenJetzt === "liste" || screenJetzt === "fortschritt") && vorListe === "ergebnis" && runde) return zeige("ergebnis");
   zeige("start");
   startRendern();
 });

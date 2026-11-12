@@ -95,6 +95,30 @@ mit diesen Regeln.
 
 ---
 
+## Lernstand und Auswahl
+
+Die App speichert im Browser (`localStorage`, Schlüssel `kvr2.lernstand`) für
+jede Regel **getrennt nach Übungsart** („r5:1“ Name, „r5:2“ Teil und Nummer),
+wie oft und in welcher Runde sie zuletzt gefragt wurde, und die Ergebnisse der
+letzten fünf **ersten** Versuche je Runde (richtig und „Doch richtig“ 1,
+falsch, gelöst und übersprungen 0).
+
+Ist die Anzahl kleiner als der Bereich, wird gewichtet ausgewählt:
+
+- Noch nie gefragte Regeln kommen zuerst.
+- Danach: Priorität = Runden seit dem letzten Abfragen × Gewicht (1 bei
+  zuletzt immer richtig bis 4 bei immer falsch). Schwache Regeln kommen
+  dadurch etwa dreimal so oft wie sichere.
+- Keine Regel setzt länger als 3 × (Bereich ÷ Anzahl, aufgerundet) Runden aus.
+- **Gemischt**: Je Regel wird die Übungsart mit der höheren Priorität gestellt,
+  also die schwächere oder länger nicht geübte. Das gilt auch bei „Alle“.
+- „Fehler nochmals üben“ stellt jede Regel in der Übungsart des Fehlversuchs.
+
+Das Balkensymbol oben rechts öffnet die Ansicht **Fortschritt** mit je einem
+Kachelraster pro Übungsart (grün sicher ab 80 %, gelb ab 40 %, rot darunter,
+grau neu). Darunter: Lernstand ausgeben, einlesen und nach Rückfrage löschen.
+Auf der Startseite steht eine Kurzübersicht je Übungsart.
+
 ## Aufbau
 
 ```
@@ -129,7 +153,7 @@ Die Regeln stehen in `index.html` im Block
   Freiwillig: `titel` (Überschrift der Lösung), je Feld `label`
   (Beschriftung des Eingabefelds) und `ebene` (1 oder 2, Einzug in der Lösung).
 
-Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v2";`
+Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v3";`
 hochzählen (`v3`, `v4` …), damit installierte Apps die neue Fassung laden.
 
 ## Datengrundlage
@@ -147,4 +171,5 @@ Stand 17. Dezember 2021 (zuletzt geändert durch Art. 1 der Verordnung vom
 ## Datenschutz
 
 Keine Übertragung, kein Tracking. Gespeichert werden nur die zuletzt gewählten
-Einstellungen (Übungsart, Bereich, Anzahl) im `localStorage` des Browsers.
+Einstellungen (Übungsart, Bereich, Anzahl) und der Lernstand im `localStorage`
+des Browsers.
