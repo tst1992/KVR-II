@@ -101,6 +101,11 @@ nach drei anderen Fragen wieder gestellt, höchstens zweimal. Danach bleibt sie
 offen und erscheint im Ergebnis. „Fehler nochmals üben“ startet eine Runde nur
 mit diesen Regeln.
 
+Richtig beantwortet: Mit **„Nochmals fragen“** kommt die Frage nach drei bis
+sechs anderen Fragen nochmals, so oft man möchte. Sie zählt weiter als beim
+ersten Mal richtig. Wird sie bei der Wiederholung nicht richtig beantwortet,
+gelten die normalen Regeln.
+
 ---
 
 ## Lernstand und Auswahl
