@@ -143,6 +143,9 @@ main{max-width:640px;margin:0 auto;padding:20px 16px 96px}
 .ghost.danger:hover{color:var(--port);border-color:var(--port)}
 .ghost.brass{color:var(--brass);border-color:rgba(216,165,68,.45)}
 .ghost.brass:hover{border-color:var(--brass);color:var(--brass)}
+.ghost.nochmals{margin-top:22px}
+.ghost.nochmals[aria-pressed="true"]{color:var(--stbd);border-color:var(--stbd);background:var(--stbd-dim)}
+.ghost.nochmals[aria-pressed="true"]::before{content:"✓ "}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
 .textlink{background:none;border:0;padding:6px 0;margin-top:14px;color:var(--fog-dim);font:inherit;font-size:.85rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
@@ -531,6 +534,7 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
       <p class="eyebrow sub-eyebrow">Lösung</p>
       <div class="loesung" id="loesung-box"></div>
 
+      <button class="ghost nochmals" id="btn-nochmals" type="button" aria-pressed="false" hidden>Nochmals fragen</button>
       <button class="cta" id="btn-weiter" type="button" style="margin-top:22px">Weiter</button>
     </div>
   </section>
@@ -639,6 +643,7 @@ input.feld.nr{font-family:var(--mono);text-align:center;font-size:1.1rem;max-wid
 
       <p class="help-h">Wiederholung</p>
       <p>Falsch, gelöst oder übersprungen: Die Frage kommt nach frühestens drei anderen Fragen wieder, bis sie richtig beantwortet ist, höchstens zweimal. Danach bleibt sie offen und erscheint im Ergebnis.</p>
+      <p>Richtig beantwortet: Mit „Nochmals fragen“ kommt die Frage nach drei bis sechs anderen Fragen nochmals, so oft Sie möchten. Sie zählt weiter als beim ersten Mal richtig. Wird sie bei der Wiederholung nicht richtig beantwortet, gelten die normalen Regeln.</p>
 
       <p class="help-h">Lernstand und Auswahl</p>
       <p>Die App merkt sich für jede Regel getrennt nach Übungsart (Name bzw. Teil und Nummer), wie oft und wann sie gefragt wurde, und die Ergebnisse der letzten fünf ersten Versuche. Es zählt nur der erste Versuch je Runde: richtig und „Doch richtig“ zählen, falsch, gelöst und übersprungen nicht.</p>
@@ -926,6 +931,8 @@ const GLEICHNAMIG_EXTERN = { "Anwendung": [{ teil: "C", nr: 20 }, { teil: "F", n
 
 const MAX_WDH = 2;      // höchstens zwei Wiederholungen je Frage
 const ABSTAND = 3;      // frühestens nach drei anderen Fragen
+const WUNSCH_MIN = 3;   // „Nochmals fragen“: nach 3 bis 6 anderen Fragen
+const WUNSCH_MAX = 6;
 
 const ARTEN = [
   { key: "1", titel: "Name eingeben", sub: "Teil und Nummer sind gegeben. Sie schreiben den Namen der Regel." },
@@ -1085,7 +1092,7 @@ function rundeStarten(ids, typen = {}) {
     vorzeitig: false,
     art: einst.art,
     st: Object.fromEntries(auswahl.map((id) => [id, {
-      wdh: 0, erst: null, erstHinweis: false, final: null, letzteAntwort: "", versuche: 0, typ: typen[id] || null,
+      wdh: 0, erst: null, erstHinweis: false, final: null, letzteAntwort: "", versuche: 0, typ: typen[id] || null, wunsch: false,
     }])),
   };
   zeige("frage");
@@ -1099,7 +1106,9 @@ function naechsteFrage() {
   if (s.versuche === 0) runde.gezeigt++;
   // Übungsart einmal festlegen; Wiederholungen behalten sie
   if (!s.typ) s.typ = runde.art === "mix" ? (Math.random() < 0.5 ? "1" : "2") : runde.art;
-  aktuell = { id, typ: s.typ, hinweis: false, ergebnis: null, ausgang: null, abgeschlossen: false, ueberstimmt: false };
+  aktuell = { id, typ: s.typ, hinweis: false, ergebnis: null, ausgang: null, abgeschlossen: false, ueberstimmt: false,
+              aufWunsch: s.wunsch, nochmals: false };
+  s.wunsch = false;
   frageRendern();
 }
 
@@ -1115,7 +1124,19 @@ function verbuchen(ausgang) {
     s.erst = ausgang; s.erstHinweis = aktuell.hinweis;
     ersterVersuchVerbuchen(aktuell.id, aktuell.typ, ausgang);
   }
-  if (ausgang === "richtig") { s.final = "richtig"; return "fertig"; }
+  if (ausgang === "richtig") {
+    s.final = "richtig";
+    if (aktuell.nochmals) {
+      // Auf Wunsch nochmals: nach 3 bis 6 anderen Fragen, sonst ans Ende der Runde
+      const abstand = WUNSCH_MIN + Math.floor(Math.random() * (WUNSCH_MAX - WUNSCH_MIN + 1));
+      runde.queue.splice(Math.min(abstand, runde.queue.length), 0, aktuell.id);
+      s.wunsch = true;
+      return "wieder";
+    }
+    return "fertig";
+  }
+  // Bei einer Wiederholung auf Wunsch nicht mehr richtig: es gelten die normalen Regeln
+  s.final = null;
   if (s.wdh < MAX_WDH) {
     s.wdh++;
     runde.queue.splice(Math.min(ABSTAND, runde.queue.length), 0, aktuell.id);
@@ -1238,7 +1259,9 @@ function frageRendern() {
   const artText = aktuell.typ === "1" ? "Name gesucht" : "Teil und Nummer gesucht";
   $("frage-label").innerHTML = s.versuche === 0
     ? `Frage ${runde.gezeigt} von ${n} · ${artText}`
-    : `<span class="wdh">Wiederholung ${s.wdh} von ${MAX_WDH}</span> · ${artText}`;
+    : aktuell.aufWunsch
+      ? `<span class="wdh">Wiederholung auf Wunsch</span> · ${artText}`
+      : `<span class="wdh">Wiederholung ${s.wdh} von ${MAX_WDH}</span> · ${artText}`;
   const anteil = Math.round((erledigt() / n) * 100);
   $("meter-fill").style.width = anteil + "%";
   $("meter").setAttribute("aria-valuenow", String(anteil));
@@ -1470,9 +1493,20 @@ function auswertungZeigen() {
   }
 
   loesungRendern($("loesung-box"), r, e);
-  $("btn-weiter").textContent = runde.queue.length || (kommtWieder() && aktuell.ausgang !== "richtig") ? "Weiter" : "Zum Ergebnis";
+  weiterBeschriften();
   $("verdict-head").focus({ preventScroll: true });
   $("verdict").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+function weiterBeschriften() {
+  const wieder = aktuell.ausgang === "richtig" ? aktuell.nochmals : kommtWieder();
+  $("btn-weiter").textContent = runde.queue.length || wieder ? "Weiter" : "Zum Ergebnis";
+}
+
+function nochmalsUmschalten() {
+  aktuell.nochmals = !aktuell.nochmals;
+  $("btn-nochmals").setAttribute("aria-pressed", String(aktuell.nochmals));
+  weiterBeschriften();
 }
 
 function verdictSetzen() {
@@ -1491,13 +1525,16 @@ function verdictSetzen() {
     sub.appendChild(document.createTextNode(falsch.join(", ") + "." + (wieder ? " Kommt später nochmals." : " Bleibt offen.")));
   } else sub.textContent = wieder ? "Die Frage kommt später nochmals." : "Die Frage bleibt offen.";
   $("btn-doch").hidden = !(e && ausgang === "falsch");
+  aktuell.nochmals = false;
+  $("btn-nochmals").setAttribute("aria-pressed", "false");
+  $("btn-nochmals").hidden = ausgang !== "richtig";
 }
 
 function dochRichtig() {
   aktuell.ausgang = "richtig";
   aktuell.ueberstimmt = true;
   verdictSetzen();
-  $("btn-weiter").textContent = runde.queue.length ? "Weiter" : "Zum Ergebnis";
+  weiterBeschriften();
   $("verdict-head").focus({ preventScroll: true });
 }
 
@@ -1834,6 +1871,7 @@ $("btn-loesen").addEventListener("click", loesen);
 $("btn-ueberspringen").addEventListener("click", ueberspringen);
 $("btn-doch").addEventListener("click", dochRichtig);
 $("btn-weiter").addEventListener("click", weiter);
+$("btn-nochmals").addEventListener("click", nochmalsUmschalten);
 $("btn-i").addEventListener("click", () => regelPanel(aktuell.id, false));
 
 // Fehler nochmals: gleiche Übungsart wie beim Fehlversuch
