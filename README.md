@@ -51,6 +51,7 @@ funktionieren erst über eine Webadresse (GitHub Pages oder z. B.
 | Name eingeben             | Teil (mit Namen, bei Teil B mit Abschnitt) und Nummer | Name der Regel (Freitext)                |
 | Teil und Nummer bestimmen | Name der Regel                              | Teil aus Liste (A–F) und Nummer                    |
 | Gemischt                  | pro Frage zufällig eine der beiden Arten    | Wiederholungen behalten die Art des Fehlversuchs   |
+| Regel-Überschriften       | alle Regeln der gewählten Teile als Liste, je Zeile die Nummer | Überschrift der Regel (Freitext), Zeile für Zeile |
 
 **Bereich**: Teil A, Teil B, Teil C (Auswahl), Teil D (Auswahl) oder alle
 gemischt. **Anzahl**: 10, 15, 20, 25 oder alle. Anzahlen, die grösser als der
@@ -58,6 +59,30 @@ gewählte Bereich sind, sind ausgegraut.
 
 **Fragenset (27 Regeln)**: alle Regeln aus Teil A (1–3) und Teil B (4–19),
 dazu Regel 23, 24, 25, 26, 27, 30, 35 und 36.
+
+### Regel-Überschriften
+
+Umfasst alle 41 Regeln (Teil A–F). **Teile**: mehrere wählbar, Teil B nach
+Abschnitt I (4–10), II (11–18) und III (19), oder „Alle Teile“.
+**Reihenfolge**: geordnet (nach Nummer, mit Teil- und Abschnittsüberschriften)
+oder zufällig (ohne Überschriften).
+
+- Je Zeile: **i** | Regelnummer | Eingabefeld. Enter oder Verlassen des Feldes
+  prüft die Zeile; Enter springt zur nächsten offenen Zeile.
+- **Alle prüfen** (auch Strg/Cmd + Enter) prüft alle übrigen Zeilen, leere
+  zählen als falsch.
+- Richtig: grün. Falsch: rot, die richtige Überschrift steht darunter, mit
+  „Doch richtig“ lässt sich die Automatik überstimmen. Bewertung wie beim
+  Regelnamen (siehe unten).
+- **i** ist gesperrt, bis die Zeile geprüft ist, und öffnet dann die ganze
+  Regel. So verrät der Regeltext die Überschrift nicht vorher.
+- Sind alle Zeilen geprüft, folgt die Auswertung „x von y richtig“ mit der
+  Liste der Fehler (Nummer, richtige Überschrift, eigene Eingabe) und
+  **Fehler wiederholen**. Zurück während der Runde wertet nur die geprüften
+  Zeilen.
+- Lernstand: Für die 27 Regeln des Fragensets zählt das Ergebnis als erster
+  Versuch der Übungsart „Name“ (`r5:1`). Die übrigen 14 Regeln werden nicht
+  gespeichert.
 
 **Sonderfälle**, zusätzlich zur normalen Eingabe:
 
@@ -157,6 +182,9 @@ Die Regeln stehen in `index.html` im Block
 }
 ```
 
+- **`zusatz`**: `true` bei den 14 Regeln ausserhalb des Fragensets (20–22,
+  28, 29, 31–34, 37–41). Sie erscheinen nur in „Regel-Überschriften“ und in
+  „Alle Regeln“.
 - **`text`**: Blöcke `[Ebene, Marke, Text]`. Ebene 0 = Absatz, 1 = Buchstabe
   (`a)`), 2 = Ziffer (`i)`). Ein Buchstabe ohne eigenen Text (`["f)", ""]`)
   wird mit der folgenden Ziffer zusammen angezeigt.
@@ -168,7 +196,7 @@ Die Regeln stehen in `index.html` im Block
   `ganz`, `absatz` oder `antwort` (Beschriftung), dazu freiwillig `titel` und
   `platzhalter`.
 
-Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v4";`
+Nach einer Änderung in `sw.js` die Zeile `const BESTAND = "kvr2-v6";`
 hochzählen (`v3`, `v4` …), damit installierte Apps die neue Fassung laden.
 
 ## Datengrundlage
@@ -178,10 +206,15 @@ Internationalen Regeln von 1972 zur Verhütung von Zusammenstößen auf See.
 Fassung ELWIS, Wasserstraßen- und Schifffahrtsverwaltung des Bundes,
 Stand 17. Dezember 2021 (zuletzt geändert durch Art. 1 der Verordnung vom
 7. Dezember 2021, BGBl. I S. 5188). Regelnamen und Texte sind wörtlich
-übernommen, mit zwei korrigierten Tippfehlern der Vorlage:
+übernommen, mit korrigierten Tippfehlern der Vorlage:
 
 - **Regel 12 a**: „auweichen“ → „ausweichen“
+- **Regel 20 d**: „Singnalkörper“ → „Signalkörper“
 - **Regel 25 c**: „Buchtabe“ → „Buchstabe“
+- **Regel 28**: „Tiefang“ → „Tiefgang“
+
+Bei Regel 39 und 41 fehlt die Fussnote zu den „Richtlinien“ (Framework and
+Procedures for the IMO Member State Audit Scheme, Entschließung A.1067(28)).
 
 ## Datenschutz
 
